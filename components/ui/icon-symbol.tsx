@@ -1,24 +1,65 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import { SymbolWeight } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+type IconMapping = Record<string, string>;
+type IconSymbolName = string;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
+ * Material Icons names are used to match design's Material Symbols Outlined
  */
-const MAPPING = {
+const MAPPING: IconMapping = {
+  // Navigation icons (matching design)
   'house.fill': 'home',
-  'paperplane.fill': 'send',
+  'map.fill': 'map',
+  'notifications': 'notifications',
+  'shield.fill': 'shield',
+  'person.fill': 'person',
+  
+  // Map related icons
+  'my_location': 'my-location',
+  'add': 'add',
+  'remove': 'remove',
+  'directions': 'directions',
+  
+  // Weather icons
+  'sunny': 'wb-sunny',
+  'cloud': 'cloud',
+  'partly_cloudy_day': 'partly-cloudy-day',
+  'bedtime': 'bedtime',
+  'water_drop': 'water-drop',
+  'ac_unit': 'ac-unit',
+  'wb_sunny': 'wb-sunny',
+  
+  // Alert icons
+  'warning': 'warning',
+  'notifications_active': 'notifications-active',
+  'local_hospital': 'local-hospital',
+  'phone_in_talk': 'phone-in-talk',
+  
+  // Settings icons
+  'language': 'language',
+  'vibration': 'vibration',
+  'format_size': 'format-size',
+  'security': 'security',
+  'logout': 'logout',
+  'chevron_right': 'chevron-right',
   'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
+  'arrow_back_ios_new': 'arrow-back-ios-new',
+  
+  // General icons
+  'calendar': 'calendar-today',
+  'bell.fill': 'notifications',
+  'gearshape.fill': 'settings',
+  'checkmark.shield.fill': 'verified-user',
+  'info.fill': 'info',
+  'check': 'check',
+  'shield_check': 'shield',
+};
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
@@ -37,5 +78,13 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const iconName = MAPPING[name] || name;
+  return (
+    <MaterialIcons
+      color={color}
+      size={size}
+      name={iconName as any}
+      style={style}
+    />
+  );
 }
