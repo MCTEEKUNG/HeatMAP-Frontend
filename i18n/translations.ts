@@ -35,6 +35,10 @@ export interface Translations {
   
   // Map Page
   dangerZoneDetected: string;
+  mediumRiskArea: string;
+  heatRiskLevelMedium: string;
+  riskLevelExtremeHeat: string;
+  lowRisk: string;
   currentlyTemp: string;
   extremeHeat: string;
   locationActive: string;
@@ -117,6 +121,10 @@ const en: Record<TranslationKey, string> = {
   
   // Map Page
   dangerZoneDetected: 'Danger Zone Detected',
+  mediumRiskArea: 'Medium Risk Area',
+  heatRiskLevelMedium: 'Heat risk level: Medium',
+  riskLevelExtremeHeat: 'Risk Level: Extreme Heat',
+  lowRisk: 'Low Risk',
   currentlyTemp: 'Currently Temp',
   extremeHeat: 'EXTREME HEAT',
   locationActive: 'Location active',
@@ -196,6 +204,10 @@ const th: Record<TranslationKey, string> = {
   
   // Map Page
   dangerZoneDetected: 'ตรวจพบโซนอันตราย',
+  mediumRiskArea: 'พื้นที่เสี่ยงระดับปานกลาง',
+  heatRiskLevelMedium: 'ระดับความเสี่ยงความร้อน: ปานกลาง',
+  riskLevelExtremeHeat: 'ระดับความเสี่ยง: ความร้อนสูงสุด',
+  lowRisk: 'ความเสี่ยงต่ำ',
   currentlyTemp: 'อุณหภูมิปัจจุบัน',
   extremeHeat: 'ความร้อนสูงสุด',
   locationActive: 'ตำแหน่งที่ตั้งทำงาน',

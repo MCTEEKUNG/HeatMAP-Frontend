@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, DesignTokens, GlassStyle, BottomNavStyle, useResponsive } from '@/constants/theme';
@@ -7,6 +7,25 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, MOCK_GRID_DATA, type GridCell } from '@/components/map';
 import useLocation from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
+
+// Helper function to find grid cell containing user's location
+const findUserGridCell = (
+  latitude: number,
+  longitude: number,
+  gridData: GridCell[]
+): GridCell | null => {
+  for (const cell of gridData) {
+    if (
+      latitude >= cell.south &&
+      latitude <= cell.north &&
+      longitude >= cell.west &&
+      longitude <= cell.east
+    ) {
+      return cell;
+    }
+  }
+  return null;
+};
 
 // Hourly forecast data
 const getHourlyForecast = (t: (key: any) => string) => [
@@ -32,6 +51,15 @@ export default function MapScreen() {
     requestPermission,
     isLoading: isLocationLoading,
   } = useLocation();
+
+  // Calculate user's current grid cell based on location
+  const userGridCell = useMemo(() => {
+    if (!userLocation) return null;
+    return findUserGridCell(userLocation.latitude, userLocation.longitude, gridData);
+  }, [userLocation, gridData]);
+
+  // Get current severity level (null if low/no risk)
+  const currentSeverity = userGridCell?.severity || null;
 
   // Check if any extreme severity exists
   const hasExtreme = gridData.some(cell => cell.severity === 'extreme');
@@ -68,11 +96,18 @@ export default function MapScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Danger Zone Warning Banner */}
-      {hasExtreme && (
+      {/* Dynamic Warning Banner based on user's current grid cell */}
+      {currentSeverity === 'extreme' && (
         <View style={[styles.warningBanner, { backgroundColor: theme.extreme }]}>
           <IconSymbol size={20} name="warning" color="#fff" />
           <ScaledText variant="labelLarge" style={styles.warningText}>{t('dangerZoneDetected')}</ScaledText>
+        </View>
+      )}
+
+      {currentSeverity === 'medium' && (
+        <View style={[styles.warningBanner, { backgroundColor: theme.medium }]}>
+          <IconSymbol size={20} name="warning" color="#fff" />
+          <ScaledText variant="labelLarge" style={styles.warningText}>{t('mediumRiskArea')}</ScaledText>
         </View>
       )}
 
@@ -93,10 +128,20 @@ export default function MapScreen() {
           { width: cardWidth }
         ]}>
           <ScaledText variant="labelSmall" style={{ color: theme.primary, textTransform: 'uppercase', letterSpacing: 1 }}>{t('currentlyTemp')}</ScaledText>
-          <ScaledText variant="displaySmall" style={{ color: theme.text, fontWeight: '700' }}>42°C</ScaledText>
+          <ScaledText variant="displaySmall" style={{ color: theme.text, fontWeight: '700' }}>
+            {userGridCell ? `${userGridCell.temperature}°C` : '--°C'}
+          </ScaledText>
           <View style={styles.tempStatus}>
-            <View style={[styles.tempIndicator, { backgroundColor: theme.extreme }]} />
-            <ScaledText variant="labelSmall" style={{ color: theme.extreme, textTransform: 'uppercase' }}>{t('extremeHeat')}</ScaledText>
+            <View style={[
+              styles.tempIndicator, 
+              { backgroundColor: currentSeverity === 'extreme' ? theme.extreme : currentSeverity === 'medium' ? theme.medium : theme.low }
+            ]} />
+            <ScaledText variant="labelSmall" style={{ 
+              color: currentSeverity === 'extreme' ? theme.extreme : currentSeverity === 'medium' ? theme.medium : theme.low, 
+              textTransform: 'uppercase' 
+            }}>
+              {currentSeverity === 'extreme' ? t('extremeHeat') : currentSeverity === 'medium' ? t('heatRiskLevelMedium').split(': ')[1] || 'Medium' : t('lowRisk')}
+            </ScaledText>
           </View>
         </View>
 
@@ -253,6 +298,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  warningSubText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '500',
+    opacity: 0.9,
   },
   mapArea: {
     flex: 1,
