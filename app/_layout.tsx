@@ -14,6 +14,13 @@ if (Platform.OS === 'web') {
 import { Colors } from '@/constants/theme';
 import { SettingsProvider, useSettings } from '@/hooks/useSettings';
 
+// Import Vercel Analytics for web
+let Analytics: any = null;
+if (Platform.OS === 'web') {
+  const { Analytics: WebAnalytics } = require('@vercel/analytics/react');
+  Analytics = WebAnalytics;
+}
+
 export const unstable_settings = {
   anchor: '(tabs)',
 };
@@ -82,6 +89,7 @@ export default function RootLayout() {
           <Stack.Screen name="prd" options={{ presentation: 'modal', title: 'Product Requirements' }} />
           <Stack.Screen name="checklist" options={{ presentation: 'modal', title: 'Safety Checklist' }} />
         </Stack>
+        {Platform.OS === 'web' && Analytics && <Analytics />}
       </AppContent>
     </SettingsProvider>
   );
