@@ -1,8 +1,10 @@
 /**
  * Heatwave Forecast App Theme
- * Heat-themed design with Light/Dark mode support
- * Primary Color: #FF6B35 (Orange - heat theme)
- * Font: Space Grotesk (display/headings), Inter (body)
+ * Warm Minimal Theme - Modern & Minimal Design
+ * Primary: #E67E22 (Carrot Orange)
+ * Background Light: #FAFAFA
+ * Background Dark: #1A1A1A
+ * Accent: #F5F5F5
  * Glassmorphism design system
  */
 
@@ -10,10 +12,10 @@ import { Platform, Dimensions, useWindowDimensions, Text, TextStyle } from 'reac
 
 // Design tokens from Stitch design - Heat themed
 export const DesignTokens = {
-  // Heat-themed primary colors
-  primaryColor: '#FF6B35',      // Warm orange - heat theme
-  secondaryColor: '#FF4444',    // Red for danger/extreme
-  accentColor: '#FFA500',        // Orange accent
+  // Warm Minimal primary colors
+  primaryColor: '#E67E22',      // Carrot Orange - warm minimal
+  secondaryColor: '#2C3E50',      // Dark slate - neutral secondary
+  accentColor: '#F5F5F5',        // Light gray - minimal accent
   
   // Severity colors (heat-themed)
   severityColors: {
@@ -28,15 +30,15 @@ export const DesignTokens = {
   
   // Background gradient colors
   backgroundGradient: {
-    light: ['#FFF5F0', '#FFE4D6'],  // Warm light backgrounds
-    dark: ['#1A1512', '#2D2420'],    // Dark warm backgrounds
+    light: ['#FAFAFA', '#F0F0F0'],  // Clean light backgrounds
+    dark: ['#1A1A1A', '#0D0D0D'],    // Deep dark backgrounds
   },
   
   // Surface colors
   surfaceColor: 'rgba(255, 255, 255, 0.95)',
   glassColor: 'rgba(255, 255, 255, 0.75)',
   glassBorder: 'rgba(255, 255, 255, 0.4)',
-  glassDark: 'rgba(30, 25, 22, 0.85)',
+  glassDark: 'rgba(26, 26, 26, 0.85)',
   glassBorderDark: 'rgba(255, 255, 255, 0.15)',
   
   // Text colors - improved contrast
@@ -114,7 +116,7 @@ export function useResponsive() {
 }
 
 const tintColorLight = DesignTokens.primaryColor;
-const tintColorDark = '#FF8C5A'; // Lighter orange for dark mode
+const tintColorDark = '#FF6B35'; // Primary orange for dark mode
 
 export const Colors = {
   light: {
@@ -122,7 +124,7 @@ export const Colors = {
     text: DesignTokens.textPrimary,
     textSecondary: DesignTokens.textSecondary,
     textMuted: '#6B6B6B',
-    background: '#FFF8F5',
+    background: '#FAFAFA',
     surface: DesignTokens.surfaceColor,
     glass: DesignTokens.glass.backgroundColor,
     tint: tintColorLight,
@@ -157,8 +159,8 @@ export const Colors = {
     text: DesignTokens.textPrimaryDark,
     textSecondary: DesignTokens.textSecondaryDark,
     textMuted: '#808080',
-    background: '#1A1512',
-    surface: 'rgba(45, 36, 32, 0.95)',
+    background: '#1A1A1A',
+    surface: 'rgba(40, 40, 40, 0.95)',
     glass: DesignTokens.glassDark,
     tint: tintColorDark,
     icon: '#C0C0C0',

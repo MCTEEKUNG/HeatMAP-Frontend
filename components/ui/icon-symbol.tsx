@@ -41,6 +41,13 @@ const MAPPING: IconMapping = {
   'local_hospital': 'local-hospital',
   'phone_in_talk': 'phone-in-talk',
   
+  // Theme / mode icons
+  'dark_mode': 'dark-mode',
+  'light_mode': 'light-mode',
+
+  // Motion icons
+  'directions_walk': 'directions-walk',
+
   // Settings icons
   'language': 'language',
   'vibration': 'vibration',

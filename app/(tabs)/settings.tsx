@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { CustomSwitch } from '@/components/ui/CustomSwitch';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors, DesignTokens, GlassStyle, BottomNavStyle, useResponsive } from '@/constants/theme';
@@ -100,11 +101,9 @@ export default function SettingsScreen() {
                 </ScaledText>
               </View>
             </View>
-            <Switch
+            <CustomSwitch
               value={isDarkMode}
               onValueChange={toggleDarkMode}
-              trackColor={{ false: 'rgba(0, 0, 0, 0.2)', true: theme.primary }}
-              thumbColor="#fff"
             />
           </View>
         </View>
@@ -162,11 +161,10 @@ export default function SettingsScreen() {
                 <IconSymbol size={20} name="notifications_active" color={theme.textSecondary} />
                 <ScaledText variant="labelLarge" style={[styles.settingLabel, { color: theme.text }]}>{t('pushNotifications')}</ScaledText>
               </View>
-              <Switch
+              <CustomSwitch
                 value={pushNotifications}
                 onValueChange={setPushNotifications}
-                trackColor={{ false: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)', true: theme.primary }}
-                thumbColor="#fff"
+                trackColorOff={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
               />
             </View>
             
@@ -176,11 +174,10 @@ export default function SettingsScreen() {
                 <IconSymbol size={20} name="vibration" color={theme.textSecondary} />
                 <ScaledText variant="labelLarge" style={[styles.settingLabel, { color: theme.text }]}>{t('hapticFeedback')}</ScaledText>
               </View>
-              <Switch
+              <CustomSwitch
                 value={hapticFeedback}
                 onValueChange={setHapticFeedback}
-                trackColor={{ false: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)', true: theme.primary }}
-                thumbColor="#fff"
+                trackColorOff={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
               />
             </View>
             

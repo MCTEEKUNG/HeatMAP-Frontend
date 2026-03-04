@@ -13,8 +13,8 @@
  * - Designed for future AI prediction integration
  */
 
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, Platform, Dimensions, TouchableOpacity } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 
 // Dark/Light tile layer URLs for OpenStreetMap
 const TILE_LAYERS = {
@@ -224,15 +224,16 @@ function WebLeafletMap({
   onGetLocation: () => void;
   isDarkMode: boolean;
 }) {
-  const MapView = useMemo(() => {
-    if (Platform.OS !== 'web') return null;
+  const [MapView, setMapView] = useState<any>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
     try {
       const ReactLeaflet = require('react-leaflet');
       const { MapContainer, TileLayer, Polygon, Marker, useMap } = ReactLeaflet;
-      return { MapContainer, TileLayer, Polygon, Marker, useMap, L: require('leaflet') };
+      setMapView({ MapContainer, TileLayer, Polygon, Marker, useMap, L: require('leaflet') });
     } catch (e) {
       console.log('Leaflet not available:', e);
-      return null;
     }
   }, []);
 
@@ -368,12 +369,13 @@ function NativeMapView({
   onGetLocation: () => void;
   isDarkMode: boolean;
 }) {
-  const MapView = useMemo(() => {
+  const [MapView, setMapView] = useState<any>(null);
+
+  useEffect(() => {
     try {
-      return require('react-native-maps');
+      setMapView(require('react-native-maps'));
     } catch (e) {
       console.log('react-native-maps not available:', e);
-      return null;
     }
   }, []);
 
