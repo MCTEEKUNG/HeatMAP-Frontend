@@ -13,6 +13,8 @@ if (Platform.OS === 'web') {
 
 import { Colors } from '@/constants/theme';
 import { SettingsProvider, useSettings } from '@/hooks/useSettings';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from '@/services/NotificationService';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -64,6 +66,25 @@ export default function RootLayout() {
     OpenSans_600SemiBold,
     OpenSans_700Bold,
   });
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => console.log("Init Push Token: ", token));
+
+    /*
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received in foreground:', notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('User interacted with notification:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener);
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+    */
+  }, []);
 
   if (!fontsLoaded) {
     return (

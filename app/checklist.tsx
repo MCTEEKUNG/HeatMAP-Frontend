@@ -7,7 +7,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
 import useLocation from '@/hooks/useLocation';
-import { getNearestCoolingPlace, estimateTravelTime, type Place } from '@/services/nearbyPlaces';
+import { getNearestCoolingPlaces, estimateTravelTime, type Place } from '@/services/nearbyPlaces';
 
 // Checklist items - will use translations
 const getChecklistItems = (t: (key: any) => string) => [
@@ -44,18 +44,15 @@ const getChecklistItems = (t: (key: any) => string) => [
 // Get icon for place type
 const getPlaceIcon = (type: Place['type']): string => {
   switch (type) {
-    case 'hospital':
-      return 'local_hospital';
-    case 'cooling_center':
-      return 'ac_unit';
-    case 'community_center':
-      return 'group';
-    case 'park':
-      return 'park';
-    case 'shop':
-      return 'store';
-    default:
-      return 'place';
+    case 'shopping_mall': return 'local_mall';
+    case 'hospital': return 'local_hospital';
+    case 'supermarket': return 'local_grocery_store';
+    case 'convenience_store': return 'storefront';
+    case 'library': return 'local_library';
+    case 'government_building': return 'account_balance';
+    case 'transit_station': return 'directions_transit';
+    case 'cooling_center': return 'ac_unit';
+    default: return 'place';
   }
 };
 
@@ -72,7 +69,7 @@ export default function ChecklistScreen() {
     getCurrentLocation,
   } = useLocation();
   
-  const [nearbyPlace, setNearbyPlace] = useState<Place | null>(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>([]);
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const [placesError, setPlacesError] = useState<string | null>(null);
 
@@ -88,11 +85,11 @@ export default function ChecklistScreen() {
     setPlacesError(null);
     
     try {
-      const place = await getNearestCoolingPlace(
+      const places = await getNearestCoolingPlaces(
         userLocation.latitude,
         userLocation.longitude
       );
-      setNearbyPlace(place);
+      setNearbyPlaces(places);
     } catch (error) {
       setPlacesError('Could not find nearby places');
     } finally {
@@ -133,10 +130,8 @@ export default function ChecklistScreen() {
     Linking.openURL('tel:911');
   };
 
-  const navigateToPlace = () => {
-    if (!nearbyPlace) return;
-    
-    const { latitude, longitude, name } = nearbyPlace;
+  const navigateToPlace = (place: Place) => {
+    const { latitude, longitude, name } = place;
     const address = encodeURIComponent(name);
     const url = Platform.OS === 'ios' 
       ? `http://maps.apple.com/?daddr=${latitude},${longitude}`
@@ -256,7 +251,7 @@ export default function ChecklistScreen() {
             <View style={[styles.loadingContainer, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
               <ActivityIndicator size="small" color={theme.primary} />
               <ScaledText variant="bodySmall" style={[styles.loadingText, { color: theme.textSecondary }]}>
-                Finding nearest cooling location...
+                Finding nearest cooling locations...
               </ScaledText>
             </View>
           ) : placesError ? (
@@ -270,40 +265,64 @@ export default function ChecklistScreen() {
                 <ScaledText variant="labelMedium" style={styles.retryText}>Retry</ScaledText>
               </TouchableOpacity>
             </View>
-          ) : nearbyPlace ? (
-            <TouchableOpacity 
-              style={[styles.nearestCareCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}
-              onPress={navigateToPlace}
-            >
-              <View style={styles.nearestCareHeader}>
-                <IconSymbol 
-                  size={24} 
-                  name={getPlaceIcon(nearbyPlace.type)} 
-                  color="#fff" 
-                />
-                <View style={styles.nearestCareInfo}>
-                  <ScaledText variant="labelLarge" style={styles.nearestCareName}>{nearbyPlace.name}</ScaledText>
-                  <ScaledText variant="bodySmall" style={styles.nearestCareDetails}>
-                    {nearbyPlace.isOpen24Hours ? 'Open 24/7' : nearbyPlace.openingHours}
-                  </ScaledText>
-                </View>
-              </View>
-              <View style={styles.nearestCareFooter}>
-                <View style={styles.distanceContainer}>
-                  <IconSymbol size={16} name="directions_walk" color={theme.primary} />
-                  <ScaledText variant="labelSmall" style={[styles.distanceText, { color: theme.text }]}>
-                    {estimateTravelTime(nearbyPlace.distance)}
-                  </ScaledText>
-                  <ScaledText variant="labelSmall" style={[styles.distanceKm, { color: theme.textSecondary }]}>
-                    ({nearbyPlace.distance.toFixed(1)} km)
-                  </ScaledText>
-                </View>
-                <View style={[styles.navigateButton, { backgroundColor: theme.primary }]}>
-                  <IconSymbol size={16} name="navigation" color="#fff" />
-                  <ScaledText variant="labelMedium" style={styles.navigateText}>Navigate</ScaledText>
-                </View>
-              </View>
-            </TouchableOpacity>
+          ) : nearbyPlaces.length > 0 ? (
+            <View style={styles.placesList}>
+              {nearbyPlaces.map((place, index) => {
+                const isHighReliability = place.type === 'shopping_mall' || place.type === 'hospital';
+                return (
+                  <View 
+                    key={place.id}
+                    style={[styles.nearestCareCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}
+                  >
+                    <View style={styles.nearestCareHeader}>
+                      <View style={[styles.placeIconContainer, { backgroundColor: theme.primary }]}>
+                        <IconSymbol 
+                          size={24} 
+                          name={getPlaceIcon(place.type)} 
+                          color="#fff" 
+                        />
+                      </View>
+                      <View style={styles.nearestCareInfo}>
+                        <ScaledText variant="labelLarge" style={[styles.nearestCareName, { color: theme.text }]}>
+                          {index + 1}. {place.name}
+                        </ScaledText>
+                        <ScaledText variant="bodySmall" style={[styles.nearestCareDetails, { color: theme.textSecondary }]}>
+                          {place.isOpen24Hours ? 'Open 24/7' : place.openingHours}
+                        </ScaledText>
+                        
+                        {/* High Reliability Badge */}
+                        {isHighReliability && (
+                          <View style={[styles.reliabilityBadge, { backgroundColor: theme.primary + '15' }]}>
+                            <IconSymbol size={12} name="ac_unit" color={theme.primary} />
+                            <ScaledText variant="caption" style={[styles.reliabilityText, { color: theme.primary }]}>
+                              High Cooling Reliability
+                            </ScaledText>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    <View style={styles.nearestCareFooter}>
+                      <View style={styles.distanceContainer}>
+                        <IconSymbol size={16} name="directions_walk" color={theme.textSecondary} />
+                        <ScaledText variant="labelSmall" style={[styles.distanceText, { color: theme.text }]}>
+                          {estimateTravelTime(place.distance)}
+                        </ScaledText>
+                        <ScaledText variant="labelSmall" style={[styles.distanceKm, { color: theme.textSecondary }]}>
+                          ({(place.distance).toFixed(1)} km)
+                        </ScaledText>
+                      </View>
+                      <TouchableOpacity 
+                        style={[styles.navigateButton, { backgroundColor: theme.primary }]}
+                        onPress={() => navigateToPlace(place)}
+                      >
+                        <IconSymbol size={16} name="navigation" color="#fff" />
+                        <ScaledText variant="labelMedium" style={styles.navigateText}>Navigate</ScaledText>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           ) : (
             <View style={[styles.noLocationContainer, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
               <IconSymbol size={32} name="location_off" color={theme.textSecondary} />
@@ -550,33 +569,59 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  placesList: {
+    gap: DesignTokens.spacing.md,
+  },
   nearestCareCard: {
-    padding: DesignTokens.spacing.lg,
+    padding: DesignTokens.spacing.md,
     borderRadius: DesignTokens.borderRadius.xl,
+    flexDirection: 'column',
   },
   nearestCareHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: DesignTokens.spacing.md,
     marginBottom: DesignTokens.spacing.md,
+  },
+  placeIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   nearestCareInfo: {
     flex: 1,
   },
   nearestCareName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
   },
   nearestCareDetails: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
     marginTop: 2,
+    marginBottom: 6,
+  },
+  reliabilityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: DesignTokens.borderRadius.sm,
+    gap: 4,
+  },
+  reliabilityText: {
+    fontWeight: '600',
+    fontSize: 11,
   },
   nearestCareFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(150, 150, 150, 0.2)',
+    paddingTop: DesignTokens.spacing.md,
   },
   distanceContainer: {
     flexDirection: 'row',
@@ -593,7 +638,7 @@ const styles = StyleSheet.create({
   navigateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: DesignTokens.borderRadius.full,

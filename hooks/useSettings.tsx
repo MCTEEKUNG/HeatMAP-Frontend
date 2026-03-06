@@ -16,6 +16,12 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export type Language = 'en' | 'th';
 export type FontSize = 'small' | 'default' | 'large';
 
+// Global singleton for non-React files to read settings synchronously
+export const GlobalSettings = {
+  pushNotifications: true,
+  hapticFeedback: false,
+};
+
 // Storage keys - Using a simple in-memory approach for persistence
 const STORAGE_KEYS = {
   THEME_MODE: 'theme_mode',
@@ -51,6 +57,12 @@ interface SettingsContextType {
   
   // Translation helper
   t: (key: string) => string;
+
+  // Notifications
+  pushNotifications: boolean;
+  setPushNotifications: (value: boolean) => void;
+  hapticFeedback: boolean;
+  setHapticFeedback: (value: boolean) => void;
 }
 
 // Default context
@@ -65,6 +77,10 @@ const defaultSettings: SettingsContextType = {
   fontScale: 1,
   typography: createTypography(1),
   t: (key: string) => key,
+  pushNotifications: true,
+  setPushNotifications: () => {},
+  hapticFeedback: false,
+  setHapticFeedback: () => {},
 };
 
 // Create context
@@ -80,6 +96,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [language, setLanguageState] = useState<Language>('en');
   const [fontSize, setFontSizeState] = useState<FontSize>('default');
+  const [pushNotifications, setPushNotificationsState] = useState<boolean>(true);
+  const [hapticFeedback, setHapticFeedbackState] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState(false);
   
   // Load settings from storage on mount
@@ -112,7 +130,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // React Native Web doesn't support Appearance.setColorScheme
     if (isNativePlatform && typeof Appearance.setColorScheme === 'function') {
       if (mode === 'system') {
-        Appearance.setColorScheme(undefined);
+        Appearance.setColorScheme(null as any);
       } else {
         Appearance.setColorScheme(mode);
       }
@@ -144,6 +162,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       console.error('Error saving font size:', error);
     }
   }, []);
+
+  const setPushNotifications = useCallback((value: boolean) => {
+    GlobalSettings.pushNotifications = value;
+    setPushNotificationsState(value);
+  }, []);
+
+  const setHapticFeedback = useCallback((value: boolean) => {
+    GlobalSettings.hapticFeedback = value;
+    setHapticFeedbackState(value);
+  }, []);
   
   // Font scale
   const fontScale = FONT_SCALE[fontSize];
@@ -167,7 +195,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     fontScale,
     typography,
     t: t as (key: string) => string,
-  }), [themeMode, isDarkMode, language, fontSize, fontScale, typography, t]);
+    pushNotifications,
+    setPushNotifications,
+    hapticFeedback,
+    setHapticFeedback,
+  }), [themeMode, isDarkMode, language, fontSize, fontScale, typography, t, pushNotifications, hapticFeedback]);
   
   if (!isLoaded) {
     return null;

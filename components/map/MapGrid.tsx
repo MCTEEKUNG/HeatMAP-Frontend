@@ -369,11 +369,11 @@ function NativeMapView({
   onGetLocation: () => void;
   isDarkMode: boolean;
 }) {
-  const [MapView, setMapView] = useState<any>(null);
+  const [mapModule, setMapModule] = useState<any>(null);
 
   useEffect(() => {
     try {
-      setMapView(require('react-native-maps'));
+      setMapModule(require('react-native-maps'));
     } catch (e) {
       console.log('react-native-maps not available:', e);
     }
@@ -381,7 +381,7 @@ function NativeMapView({
 
   const mapRef = useRef<any>(null);
 
-  if (!MapView) {
+  if (!mapModule) {
     return (
       <View style={styles.nativeFallback}>
         <Text style={styles.loadingText}>Map not available</Text>
@@ -389,7 +389,7 @@ function NativeMapView({
     );
   }
 
-  const { Marker, Polygon, PROVIDER_GOOGLE } = MapView;
+  const { default: MapView, Marker, Polygon, PROVIDER_GOOGLE } = mapModule;
 
   const initialRegion = userLocation 
     ? { 

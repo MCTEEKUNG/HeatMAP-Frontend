@@ -29,7 +29,8 @@ const MAPPING: IconMapping = {
   // Weather icons
   'sunny': 'wb-sunny',
   'cloud': 'cloud',
-  'partly_cloudy_day': 'partly-cloudy-day',
+  'partly_cloudy_day': 'wb-cloudy',
+  'partly-cloudy-day': 'wb-cloudy',
   'bedtime': 'bedtime',
   'water_drop': 'water-drop',
   'ac_unit': 'ac-unit',
@@ -57,6 +58,15 @@ const MAPPING: IconMapping = {
   'chevron_right': 'chevron-right',
   'chevron.left.forwardslash.chevron.right': 'code',
   'arrow_back_ios_new': 'arrow-back-ios-new',
+  
+  // Places icons
+  'local_mall': 'local-mall',
+  'local_grocery_store': 'local-grocery-store',
+  'storefront': 'storefront',
+  'local_library': 'local-library',
+  'account_balance': 'account-balance',
+  'directions_transit': 'directions-transit',
+  'place': 'place',
   
   // General icons
   'calendar': 'calendar-today',

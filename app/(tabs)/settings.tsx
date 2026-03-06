@@ -7,6 +7,8 @@ import { Colors, DesignTokens, GlassStyle, BottomNavStyle, useResponsive } from 
 import { useSettings, Language, FontSize } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
+import * as Notifications from 'expo-notifications';
+import { scheduleLocalNotification } from '@/services/NotificationService';
 
 export default function SettingsScreen() {
   const { 
@@ -17,13 +19,14 @@ export default function SettingsScreen() {
     fontSize, 
     setFontSize,
     typography,
-    t 
+    t,
+    pushNotifications,
+    setPushNotifications,
+    hapticFeedback,
+    setHapticFeedback
   } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
   const { isDesktop } = useResponsive();
-  
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [hapticFeedback, setHapticFeedback] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -180,6 +183,27 @@ export default function SettingsScreen() {
                 trackColorOff={isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
               />
             </View>
+
+            {/* Test Notification Button */}
+            <TouchableOpacity 
+              style={[styles.settingRow, GlassStyle[isDarkMode ? 'dark' : 'light'], { justifyContent: 'center', backgroundColor: `${theme.primary}15` }]}
+              onPress={async () => {
+                if (!pushNotifications) {
+                  Alert.alert("Disabled", "Push notifications are disabled in your settings.");
+                  return;
+                }
+                await scheduleLocalNotification(
+                  "🔥 Heatwave Alert Simulated", 
+                  "This is a test notification from your settings.",
+                  { url: "/(tabs)/alerts" }
+                );
+              }}
+            >
+              <View style={styles.settingLeft}>
+                <IconSymbol size={20} name="notifications_active" color={theme.primary} />
+                <ScaledText variant="labelLarge" style={[styles.settingLabel, { color: theme.primary }]}>{t('testNotification') || "Test Notification"}</ScaledText>
+              </View>
+            </TouchableOpacity>
             
             {/* Font Size */}
             <View style={[styles.settingRowInner, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
