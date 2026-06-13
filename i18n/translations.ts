@@ -203,7 +203,7 @@ const en: Record<TranslationKey, string> = {
   asOf: 'As of',
   offlineData: 'Offline — showing bundled province list',
   provinceForecastTitle: 'Province forecast',
-  sevenDayForecast: '7-day heatwave outlook',
+  sevenDayForecast: '2–6 week outlook',
   noForecastData: 'No forecast available for this province yet.',
 
   // Common
@@ -313,7 +313,7 @@ const th: Record<TranslationKey, string> = {
   asOf: 'ข้อมูล ณ',
   offlineData: 'ออฟไลน์ — แสดงรายชื่อจังหวัดที่มากับแอป',
   provinceForecastTitle: 'พยากรณ์รายจังหวัด',
-  sevenDayForecast: 'แนวโน้มคลื่นความร้อน 7 วัน',
+  sevenDayForecast: 'แนวโน้ม 2–6 สัปดาห์',
   noForecastData: 'ยังไม่มีพยากรณ์สำหรับจังหวัดนี้',
 
   // Common

@@ -1,7 +1,7 @@
 /**
  * ProvinceForecastPanel
  *
- * Renders the 7-day per-province heatwave outlook returned by
+ * Renders the 2–6 week per-province heatwave outlook returned by
  * `/api/forecast/province/:id` (via `useProvinceForecast`), with the model's
  * "as of" (`generated_at`) timestamp. Handles loading / empty / error states
  * so it degrades gracefully when the backend is asleep or offline.
@@ -86,14 +86,17 @@ export function ProvinceForecastPanel({ province, days = 7 }: Props) {
 
       {!loading && !error && forecast.length > 0 && (
         <View style={styles.daysRow}>
-          {forecast.map((d) => {
+          {forecast.map((d, i) => {
             const sev = riskLevelToSeverity(d.risk_level);
             const color = getRiskColor(sev);
+            const weekNum = i + 2;
+            const weekLabel = language === 'th' ? `สัปดาห์ ${weekNum}` : `Wk ${weekNum}`;
             return (
               <View
                 key={d.target_date}
                 style={[styles.dayCell, { backgroundColor: `${color}1A`, borderColor: `${color}55` }]}
               >
+                <Text style={[styles.dayWeek, { color: theme.textMuted }]}>{weekLabel}</Text>
                 <Text style={[styles.dayDate, { color: theme.textMuted }]} numberOfLines={1}>
                   {formatForecastDate(d.target_date).replace(/, \d{4}$/, '')}
                 </Text>
@@ -144,6 +147,7 @@ const styles = StyleSheet.create({
     borderRadius: DesignTokens.borderRadius.md,
     borderWidth: 1,
   },
+  dayWeek: { fontSize: 9, fontWeight: '500' },
   dayDate: { fontSize: 10, fontWeight: '600' },
   dayDot: { width: 8, height: 8, borderRadius: 4 },
   dayProb: { fontSize: 12, fontWeight: '700' },
