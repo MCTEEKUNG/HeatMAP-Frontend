@@ -12,9 +12,11 @@ import {
   getForecastMap,
   getAlertTier,
   alertTierColor,
+  alertTierLabel,
   assertAlertThresholdsCurrent,
   formatForecastDate,
   formatGeneratedAt,
+  riskPercent,
   type AlertTier,
   type MapForecastPoint,
 } from '@/services/forecastService';
@@ -35,72 +37,20 @@ function tierToRisk(tier: AlertTier): RiskLevel {
   return tier === 'warning' ? 'danger' : tier === 'watch' ? 'caution' : 'safe';
 }
 
-/** One calendar day derived from the per-province forecast. */
-interface CalendarDay {
-  date: string;       // YYYY-MM-DD (target_date)
-  riskLevel: RiskLevel;
-  isToday: boolean;
-}
-
 const RISK_COLORS = {
-  safe:    { bg: 'rgba(34,197,94,0.18)',  border: '#22C55E', text: { dark: '#4ADE80', light: '#16A34A' } },
-  caution: { bg: 'rgba(234,179,8,0.20)',  border: '#EAB308', text: { dark: '#FDE047', light: '#CA8A04' } },
-  danger:  { bg: 'rgba(239,68,68,0.22)',  border: '#EF4444', text: { dark: '#F87171', light: '#DC2626' } },
+  safe:    { text: { dark: '#4ADE80', light: '#16A34A' } },
+  caution: { text: { dark: '#FDE047', light: '#CA8A04' } },
+  danger:  { text: { dark: '#F87171', light: '#DC2626' } },
 };
-
-function riskBg(risk: RiskLevel): string {
-  return RISK_COLORS[risk]?.bg ?? 'transparent';
-}
-
-function riskBorder(risk: RiskLevel): string {
-  return RISK_COLORS[risk]?.border ?? 'transparent';
-}
 
 function riskTextColor(risk: RiskLevel, isDark: boolean): string {
   return RISK_COLORS[risk]?.text[isDark ? 'dark' : 'light'] ?? (isDark ? '#A1A1AA' : '#6B7280');
 }
 
-// ─── Calendar builder ─────────────────────────────────────────────────────────
-
-/**
- * Builds a month grid matching the forecast calendar.
- * We show the current month and colour each day using AI risk data.
- */
-function buildMonthGrid(calendarDays: CalendarDay[]): {
-  year: number;
-  month: number;
-  startWeekday: number;
-  daysInMonth: number;
-  riskMap: Map<number, CalendarDay>;
-} {
-  const now = new Date();
-  const year  = now.getFullYear();
-  const month = now.getMonth(); // 0-indexed
-  const daysInMonth    = new Date(year, month + 1, 0).getDate();
-  const startWeekday   = new Date(year, month, 1).getDay(); // 0 = Sunday
-
-  // Map day-of-month → CalendarDay for fast lookup (dates are YYYY-MM-DD,
-  // parsed as UTC to avoid off-by-one in negative-offset timezones)
-  const riskMap = new Map<number, CalendarDay>();
-  calendarDays.forEach((c) => {
-    const d = new Date(`${c.date}T00:00:00Z`);
-    if (d.getUTCFullYear() === year && d.getUTCMonth() === month) {
-      riskMap.set(d.getUTCDate(), c);
-    }
-  });
-
-  return { year, month, startWeekday, daysInMonth, riskMap };
-}
-
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AlertsScreen() {
-  const { isDarkMode, t } = useSettings();
+  const { isDarkMode, t, language } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
 
   // National two-tier alert roll-up (watch / warning) from the per-province map.
@@ -195,20 +145,6 @@ export default function AlertsScreen() {
     fetchMap();
     await refreshProvince();
   }, [fetchMap, refreshProvince]);
-
-  // Calendar days derived from the province forecast (tier ← server risk_level)
-  const todayStr = new Date().toISOString().split('T')[0];
-  const calendar: CalendarDay[] = useMemo(
-    () => provinceDays.map((d) => ({
-      date: d.target_date,
-      riskLevel: tierToRisk(getAlertTier(d.probability)),
-      isToday: d.target_date === todayStr,
-    })),
-    [provinceDays, todayStr],
-  );
-
-  // Build dynamic calendar grid for the current month
-  const { year, month, startWeekday, daysInMonth, riskMap } = buildMonthGrid(calendar);
 
   // Derive today's headline from the SOONEST province forecast day (today or
   // the nearest upcoming target_date).
@@ -359,7 +295,7 @@ export default function AlertsScreen() {
 
               {todayForecast && (
                 <ScaledText variant="bodyMedium" style={[styles.forecastDesc, { color: theme.textSecondary }]}>
-                  {`${heatwaveDays} heatwave days predicted in the next ${provinceDays.length} days — ${(avgProbability * 100).toFixed(0)}% average risk`}
+                  {`${heatwaveDays} heatwave weeks predicted in the next ${provinceDays.length} weeks — ${(avgProbability * 100).toFixed(0)}% average risk`}
                 </ScaledText>
               )}
 
@@ -372,15 +308,13 @@ export default function AlertsScreen() {
           )}
         </View>
 
-        {/* ── AI-powered Calendar ── */}
+        {/* ── 2–6 Week Outlook ── */}
         <View style={styles.calendarSection}>
           <ScaledText variant="labelMedium" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            {`${MONTH_NAMES[month]} ${year} — AI Heatwave Forecast (7-day)`}
+            {language === 'th' ? 'แนวโน้ม 2–6 สัปดาห์ข้างหน้า' : '2–6 week outlook'}
           </ScaledText>
 
           <View style={[styles.calendarCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
-            {/* Distinguish loading / no-data from a genuine all-safe month:
-                only paint the colour-coded grid when real forecast days exist. */}
             {provinceLoading ? (
               <View style={styles.stateRow}>
                 <ActivityIndicator size="small" color={theme.primary} />
@@ -400,75 +334,38 @@ export default function AlertsScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-            <>
-            {/* Week-day headers */}
-            <View style={styles.weekHeader}>
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                <ScaledText key={i} variant="labelSmall" style={[styles.weekDay, { color: theme.textSecondary }]}>
-                  {d}
-                </ScaledText>
-              ))}
-            </View>
-
-            {/* Calendar grid */}
-            <View style={styles.calendarGrid}>
-              {/* Leading empty cells */}
-              {Array.from({ length: startWeekday }).map((_, i) => (
-                <View key={`empty-${i}`} style={styles.calendarCell} />
-              ))}
-
-              {/* Day cells */}
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                const cell    = riskMap.get(day);
-                const risk    = cell?.riskLevel ?? 'safe';
-                const isToday = cell?.isToday ?? (day === new Date().getDate());
-
-                return (
-                  <View
-                    key={day}
-                    style={[
-                      styles.calendarCell,
-                      {
-                        backgroundColor: isToday
-                          ? (isDarkMode ? '#3B82F6' : '#007AFF')
-                          : riskBg(risk),
-                        borderColor:     isToday ? 'transparent' : riskBorder(risk),
-                        borderWidth:     risk !== 'safe' && !isToday ? 1 : 0,
-                      },
-                    ]}
-                  >
-                    <ScaledText
-                      variant="labelSmall"
+              <>
+                {provinceDays.map((day, i) => {
+                  const tier = getAlertTier(day.probability);
+                  const tierColor = alertTierColor(tier, isDarkMode);
+                  return (
+                    <View
+                      key={day.target_date}
                       style={[
-                        styles.calendarDay,
-                        isToday
-                          ? { color: '#fff', fontWeight: '900' }
-                          : { color: riskTextColor(risk, isDarkMode), fontWeight: risk !== 'safe' ? '700' : '400' },
+                        styles.weekRow,
+                        { borderBottomColor: theme.border },
                       ]}
                     >
-                      {day}
-                    </ScaledText>
-                  </View>
-                );
-              })}
-            </View>
-
-            {/* Legend */}
-            <View style={styles.calendarLegend}>
-              {([
-                { label: '🟢 Safe',    color: isDarkMode ? '#4ADE80' : '#16A34A' },
-                { label: '🟡 Caution', color: isDarkMode ? '#FDE047' : '#CA8A04' },
-                { label: '🔴 Danger',  color: isDarkMode ? '#F87171' : '#DC2626' },
-              ] as const).map((item) => (
-                <View key={item.label} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                  <ScaledText variant="labelSmall" style={{ color: theme.textSecondary, fontSize: 9 }}>
-                    {item.label}
-                  </ScaledText>
-                </View>
-              ))}
-            </View>
-            </>
+                      <View style={styles.weekLeft}>
+                        <ScaledText style={[styles.weekTitle, { color: theme.text }]}>
+                          {language === 'th' ? `สัปดาห์ที่ ${i + 2}` : `Week ${i + 2}`}
+                        </ScaledText>
+                        <ScaledText style={[styles.weekDate, { color: theme.textSecondary }]}>
+                          {formatForecastDate(day.target_date)}
+                        </ScaledText>
+                      </View>
+                      <View style={styles.weekRight}>
+                        <ScaledText style={[styles.weekPct, { color: tierColor }]}>
+                          {riskPercent(day.probability)}%
+                        </ScaledText>
+                        <ScaledText style={[styles.weekTier, { color: tierColor }]}>
+                          {alertTierLabel(tier, language)}
+                        </ScaledText>
+                      </View>
+                    </View>
+                  );
+                })}
+              </>
             )}
           </View>
         </View>
@@ -579,7 +476,7 @@ const styles = StyleSheet.create({
   },
   forecastDesc: { fontSize: 12, textAlign: 'center', maxWidth: 260 },
 
-  // Calendar
+  // Calendar / Weekly Outlook
   calendarSection: { marginBottom: DesignTokens.spacing.lg },
   sectionTitle: {
     fontSize: 12, fontWeight: '700',
@@ -590,26 +487,19 @@ const styles = StyleSheet.create({
     padding:      DesignTokens.spacing.md,
     borderRadius: DesignTokens.borderRadius.xl,
   },
-  weekHeader:   { flexDirection: 'row', marginBottom: DesignTokens.spacing.sm },
-  weekDay:      { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '700' },
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  calendarCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems:     'center',
-    borderRadius:   DesignTokens.borderRadius.md,
+  weekRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  calendarDay:  { fontSize: 12 },
-  calendarLegend: {
-    flexDirection:  'row',
-    justifyContent: 'center',
-    gap:  DesignTokens.spacing.lg,
-    marginTop: DesignTokens.spacing.sm,
-    paddingTop: DesignTokens.spacing.sm,
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendDot:  { width: 8, height: 8, borderRadius: 4 },
+  weekLeft: {},
+  weekTitle: { fontSize: 16, fontWeight: '600' },
+  weekDate: { fontSize: 13, marginTop: 2 },
+  weekRight: { alignItems: 'flex-end' },
+  weekPct: { fontSize: 20, fontWeight: '700' },
+  weekTier: { fontSize: 12, fontWeight: '600', marginTop: 2 },
 
   // Metrics
   metricsSection: { marginBottom: DesignTokens.spacing.lg },
