@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { CustomSwitch } from '@/components/ui/CustomSwitch';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, FontFamily, SoftShadow } from '@/constants/theme';
@@ -6,8 +6,6 @@ import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { useSettings, Language, FontSize } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { scheduleLocalNotification } from '@/services/NotificationService';
-
 // Keep in sync with models/model_card.json (served model) — judges read this.
 const MODEL_INFO = {
   model: 'LightGBM · lgbm-v1',
@@ -96,32 +94,10 @@ export default function SettingsScreen() {
             right={<CustomSwitch value={pushNotifications} onValueChange={setPushNotifications} />}
           />
           <Row
+            last
             icon="vibration"
             label="สั่นตอบสนอง"
             right={<CustomSwitch value={hapticFeedback} onValueChange={setHapticFeedback} />}
-          />
-          <Row
-            last
-            icon="send"
-            label="ทดสอบการแจ้งเตือน"
-            right={
-              <TouchableOpacity
-                style={[styles.testBtn, { borderColor: theme.primary }]}
-                onPress={async () => {
-                  if (!pushNotifications) {
-                    Alert.alert('ปิดอยู่', 'เปิด "แจ้งเตือนความเสี่ยง" ก่อนทดสอบ');
-                    return;
-                  }
-                  await scheduleLocalNotification(
-                    'ทดสอบการแจ้งเตือนความร้อน',
-                    'นี่คือข้อความทดสอบจากหน้าตั้งค่า',
-                    { url: '/(tabs)/alerts' },
-                  );
-                }}
-              >
-                <ScaledText style={[styles.testBtnText, { color: theme.primary }]}>ส่งทดสอบ</ScaledText>
-              </TouchableOpacity>
-            }
           />
         </View>
 

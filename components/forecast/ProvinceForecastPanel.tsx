@@ -6,8 +6,7 @@
  * "as of" (`generated_at`) timestamp. Handles loading / empty / error states
  * so it degrades gracefully when the backend is asleep or offline.
  *
- * Reused by the Map screen and the /liff (LINE) route so web and in-LINE views
- * show identical data.
+ * Reused by the Map screen so the province detail panel shows forecast data.
  */
 
 import React from 'react';

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
 import { Colors, DesignTokens, GlassStyle, RiskBg, RiskColors, FontFamily, useResponsive } from '@/constants/theme';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { useSettings } from '@/hooks/useSettings';
@@ -88,7 +87,7 @@ export default function MapScreen() {
     };
   }, []);
 
-  // Location hook — declared early so lat/lng are available for useWeather
+  // Location hook — declared early so lat/lng are available for map positioning
   const {
     location: userLocation,
     status: locationStatus,
@@ -411,15 +410,6 @@ export default function MapScreen() {
               </ScaledText>
             )}
           </View>
-
-          <TouchableOpacity
-            style={[styles.ctaPrimary, { backgroundColor: theme.primary }]}
-            onPress={() => router.push('/checklist')}
-            accessibilityRole="button"
-          >
-            <ScaledText style={styles.ctaPrimaryText}>ต้องทำยังไง</ScaledText>
-            <ScaledText style={styles.ctaPrimaryText}>→</ScaledText>
-          </TouchableOpacity>
 
           <View style={[styles.miniLegend, { borderTopColor: theme.border }]}>
             {([

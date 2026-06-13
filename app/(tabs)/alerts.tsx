@@ -8,7 +8,6 @@ import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { useProvinceForecast } from '@/hooks/useProvinceForecast';
-import { useWeather } from '@/hooks/useWeather';
 import {
   getForecastMap,
   getAlertTier,
@@ -104,9 +103,6 @@ export default function AlertsScreen() {
   const { isDarkMode, t } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
 
-  // Real weather data from Open-Meteo (Bangkok default, no GPS needed)
-  const { temperature, wetBulb, uvIndex, humidity, aqi, aqiLabel, daily } = useWeather();
-
   // National two-tier alert roll-up (watch / warning) from the per-province map.
   // Tier comes from the server's risk_level (single source of truth: src/risk.py
   // bands nest the alert thresholds — extreme==warning, high==watch).
@@ -154,10 +150,9 @@ export default function AlertsScreen() {
     return { warningCount: warning, watchCount: watch, rollupDate: soonest };
   }, [mapPoints]);
 
-  // The user's province: nearest map point to the weather location (Bangkok
-  // default — same assumption useWeather makes on this screen). When GPS is
-  // wired into this screen, swap these coords for the fix; everything below
-  // adapts automatically.
+  // The user's province: nearest map point to the Bangkok default coordinates.
+  // When GPS is wired into this screen, swap these coords for the fix; everything
+  // below adapts automatically.
   const HOME_LAT = 13.7563;
   const HOME_LON = 100.5018;
   const provinceId = useMemo(() => {
@@ -216,9 +211,8 @@ export default function AlertsScreen() {
   const { year, month, startWeekday, daysInMonth, riskMap } = buildMonthGrid(calendar);
 
   // Derive today's headline from the SOONEST province forecast day (today or
-  // the nearest upcoming target_date), live temp from Open-Meteo.
+  // the nearest upcoming target_date).
   const todayForecast = provinceDays.length > 0 ? provinceDays[0] : null;
-  const todayTemp = Math.round(temperature);
   const todayRisk: RiskLevel = todayForecast
     ? tierToRisk(getAlertTier(todayForecast.probability))
     : 'safe';
@@ -240,44 +234,6 @@ export default function AlertsScreen() {
     todayRisk === 'danger'  ? '🔴 DANGER — Check Safety Guide Now' :
     todayRisk === 'caution' ? '🟡 Caution — Prepare Yourself' :
                               '🟢 Safe — No Heatwave';
-
-  // Survival metrics derived from real data
-  const METRICS = [
-    {
-      label:       t('wetBulb'),
-      value:       `${wetBulb}°C`,
-      status:      wetBulb >= 28 ? 'Danger Zone' : wetBulb >= 24 ? t('moderateRisk') : 'Safe',
-      statusColor: wetBulb >= 28
-        ? (isDarkMode ? '#F87171' : '#EF4444')
-        : wetBulb >= 24
-          ? (isDarkMode ? '#FB923C' : '#F97316')
-          : (isDarkMode ? '#4ADE80' : '#34C759'),
-    },
-    {
-      label:       t('aqi'),
-      value:       String(aqi),
-      status:      aqiLabel,
-      statusColor: aqi <= 20
-        ? (isDarkMode ? '#4ADE80' : '#34C759')
-        : aqi <= 40
-          ? (isDarkMode ? '#60A5FA' : '#007AFF')
-          : (isDarkMode ? '#FB923C' : '#F97316'),
-    },
-    {
-      label:       t('uvIndex'),
-      value:       uvIndex.toFixed(1),
-      status:      uvIndex >= 8 ? 'Very High' : uvIndex >= 6 ? t('high') : t('moderate'),
-      statusColor: uvIndex >= 8
-        ? (isDarkMode ? '#F87171' : '#EF4444')
-        : isDarkMode ? '#FB923C' : '#F97316',
-    },
-    {
-      label:       t('humidity'),
-      value:       `${Math.round(humidity)}%`,
-      status:      humidity >= 80 ? 'Very Humid' : humidity >= 60 ? t('stable') : 'Low',
-      statusColor: isDarkMode ? '#A1A1AA' : '#8E8E93',
-    },
-  ];
 
   // ── Normal render ──
   return (
@@ -371,10 +327,6 @@ export default function AlertsScreen() {
               {todayRisk === 'danger' ? '🔥' : todayRisk === 'caution' ? '☀️' : '🌤️'}
             </ScaledText>
           </View>
-
-          <ScaledText variant="displayLarge" style={[styles.tempValue, { color: theme.text }]}>
-            {todayTemp}°C
-          </ScaledText>
 
           {/* AI risk headline — never assert "Safe" while the forecast is
               loading, failed, or empty (the original misleading-state bug). */}
@@ -521,85 +473,6 @@ export default function AlertsScreen() {
           </View>
         </View>
 
-        {/* ── Live Conditions Grid ── */}
-        <View style={styles.metricsSection}>
-          <View style={styles.metricsGrid}>
-            {METRICS.map((metric, index) => (
-              <View key={index} style={[styles.metricCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
-                <View style={styles.metricHeader}>
-                  <IconSymbol size={18} name="wb_sunny" color={theme.primary} />
-                  <ScaledText variant="bodySmall" style={[styles.metricLabel, { color: theme.textSecondary }]}>
-                    {metric.label}
-                  </ScaledText>
-                </View>
-                <ScaledText variant="labelLarge" style={[styles.metricValue, { color: theme.text }]}>
-                  {metric.value}
-                </ScaledText>
-                <ScaledText variant="labelSmall" style={[styles.metricStatus, { color: metric.statusColor }]}>
-                  {metric.status}
-                </ScaledText>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* ── 7-Day Weather Forecast (Open-Meteo) ── */}
-        {daily.length > 0 && (
-          <View style={styles.dailySection}>
-            <ScaledText variant="labelMedium" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-              7-DAY WEATHER FORECAST
-            </ScaledText>
-            <View style={[styles.dailyCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
-              {daily.map((day, i) => (
-                <View
-                  key={day.date}
-                  style={[
-                    styles.dailyRow,
-                    i < daily.length - 1 && { borderBottomWidth: 1, borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }
-                  ]}
-                >
-                  <ScaledText variant="labelMedium" style={[styles.dailyDay, { color: theme.text }]}>
-                    {day.dayLabel}
-                  </ScaledText>
-                  <View style={styles.dailyMiddle}>
-                    <ScaledText style={{ fontSize: 20 }}>{
-                      day.icon === 'sunny' ? '☀️' :
-                      day.icon === 'partly_cloudy_day' ? '⛅' :
-                      day.icon === 'cloud' ? '☁️' :
-                      day.icon === 'rainy' ? '🌧️' :
-                      day.icon === 'thunderstorm' ? '⛈️' :
-                      day.icon === 'foggy' ? '🌫️' : '🌤️'
-                    }</ScaledText>
-                    {day.precipProb > 20 && (
-                      <ScaledText variant="labelSmall" style={{ color: '#60A5FA', marginLeft: 6 }}>
-                        {day.precipProb}%
-                      </ScaledText>
-                    )}
-                  </View>
-                  <View style={styles.dailyTemps}>
-                    <ScaledText variant="labelMedium" style={{ color: theme.text, fontWeight: '700', minWidth: 36, textAlign: 'right' }}>
-                      {day.tempMax}°
-                    </ScaledText>
-                    <ScaledText variant="labelSmall" style={{ color: theme.textSecondary, minWidth: 32, textAlign: 'right' }}>
-                      {day.tempMin}°
-                    </ScaledText>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ── Safety Button ── */}
-        <TouchableOpacity
-          style={[styles.safetyButton, { backgroundColor: theme.primary }]}
-          onPress={() => router.push('/checklist')}
-        >
-          <IconSymbol size={24} name="shield_check" color="#fff" />
-          <ScaledText variant="labelLarge" style={styles.safetyButtonText}>
-            {t('safetyActions')}
-          </ScaledText>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* Floating liquid-glass tab bar (shared) */}

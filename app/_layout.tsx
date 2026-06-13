@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,7 +9,6 @@ import 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
 import { SettingsProvider, useSettings } from '@/hooks/useSettings';
-import { registerForPushNotificationsAsync } from '@/services/NotificationService';
 
 // Import global CSS for web (Leaflet). Must stay a conditional require so native
 // builds never resolve the web-only stylesheet.
@@ -76,25 +74,6 @@ export default function RootLayout() {
     BaiJamjuree_700Bold,
   });
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(token => console.log("Init Push Token: ", token));
-
-    /*
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received in foreground:', notification);
-    });
-
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('User interacted with notification:', response);
-    });
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener);
-      Notifications.removeNotificationSubscription(responseListener);
-    };
-    */
-  }, []);
-
   if (!fontsLoaded) {
     return (
       <View style={styles.loadingContainer}>
@@ -109,9 +88,6 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          <Stack.Screen name="prd" options={{ presentation: 'modal', title: 'Product Requirements' }} />
-          <Stack.Screen name="checklist" options={{ presentation: 'modal', headerShown: false }} />
-          <Stack.Screen name="liff" options={{ headerShown: false }} />
         </Stack>
       </AppContent>
     </SettingsProvider>
