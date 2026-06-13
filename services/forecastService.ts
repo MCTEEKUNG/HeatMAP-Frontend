@@ -1,4 +1,4 @@
-import { api } from './apiService';
+import { loadContract, mapPoints, provinceDays } from './deepseekContract';
 
 // ─── Per-province forecast (spec §7 / Phase 5) ────────────────────────────────
 
@@ -40,20 +40,13 @@ export interface MapForecastPoint {
 }
 
 /** Fetch the 7-day (default) forecast for a single province. */
-export function getProvinceForecast(
-  provinceId: number,
-  days: number = 7,
-): Promise<ProvinceForecastDay[]> {
-  // 45s timeout — Render free tier can take 30s+ to wake from sleep
-  return api.get<ProvinceForecastDay[]>(
-    `/api/forecast/province/${provinceId}?days=${days}`,
-    { timeoutMs: 45_000 },
-  );
+export async function getProvinceForecast(provinceId: number, _days: number = 7): Promise<ProvinceForecastDay[]> {
+  return provinceDays(await loadContract(), provinceId);
 }
 
 /** Fetch the latest forecast value for every province (for the map). */
-export function getForecastMap(): Promise<MapForecastPoint[]> {
-  return api.get<MapForecastPoint[]>('/api/forecast/map', { timeoutMs: 45_000 });
+export async function getForecastMap(): Promise<MapForecastPoint[]> {
+  return mapPoints(await loadContract());
 }
 
 /**

@@ -9,8 +9,6 @@
  *   GET /api/provinces -> [{ id, code, name_th, name_en, region, lat, lon }]
  */
 
-import { api } from './apiService';
-
 export interface Province {
   id: number;
   code: string;
@@ -108,18 +106,9 @@ export const FALLBACK_PROVINCES: Province[] = [
 ];
 
 /**
- * Fetch the province list from the backend, falling back to the bundled list
- * on any failure. Resolves with `{ provinces, fromFallback }` so callers can
- * surface an offline/stale indicator if desired.
+ * Returns the bundled list of all 77 Thai provinces.
+ * Resolves with `{ provinces, fromFallback }` so callers are unchanged.
  */
 export async function getProvinces(): Promise<{ provinces: Province[]; fromFallback: boolean }> {
-  try {
-    const data = await api.get<Province[]>('/api/provinces');
-    if (Array.isArray(data) && data.length > 0) {
-      return { provinces: data, fromFallback: false };
-    }
-    return { provinces: FALLBACK_PROVINCES, fromFallback: true };
-  } catch {
-    return { provinces: FALLBACK_PROVINCES, fromFallback: true };
-  }
+  return { provinces: FALLBACK_PROVINCES, fromFallback: false };
 }
