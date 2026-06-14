@@ -97,3 +97,18 @@ Expected shape (schema version 1):
 ```
 
 Produced by the DeepSeek heatwave model at `../DeepSeek_Heatwave/docs/forecast_provinces.json`.
+
+## Forecast data source (bridge)
+
+The app reads the contract via `EXPO_PUBLIC_FORECAST_URL` (see `services/deepseekContract.ts`),
+and rejects any unsupported `schema_version` at load (`assertContract`).
+
+- **Dev:** same-origin `public/forecast_provinces.json`, synced by the DeepSeek bridge
+  (`python scripts/publish_bridge.py` in `../DeepSeek_Heatwave`).
+- **Prod:** set `EXPO_PUBLIC_FORECAST_URL` to the published Pages URL
+  (`https://mcteekung.github.io/heatwave-contract/forecast_provinces.json`). It's wired in
+  `.env.production`; build with **`bunx expo export -p web --clear`** — the `--clear` is required
+  so Metro re-inlines the env var (a cached transform otherwise keeps the dev default).
+
+The current model run is historical (`issue_date` 2023-12-31), so the Forecast Details screen
+shows a "historical model run" banner and dates in early 2024.
