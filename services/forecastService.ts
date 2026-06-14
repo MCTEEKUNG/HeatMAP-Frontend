@@ -34,6 +34,9 @@ export interface MapForecastPoint {
   risk_level: RiskLevel;
   target_date: string;
   generated_at: string;
+  /** Date the model run was issued (latest date with complete features).
+   *  Forecast target_dates are issue_date + lead_weeks*7. */
+  issue_date: string;
   /** Model that produced this row (e.g. 'lgbm-v1'); used to detect stale
    *  client-side alert thresholds (see ALERT_TUNED_FOR_VERSION). */
   model_version?: string;

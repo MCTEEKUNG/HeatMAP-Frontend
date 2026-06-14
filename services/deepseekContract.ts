@@ -31,6 +31,7 @@ export function mapPoints(c: Contract): MapForecastPoint[] {
       province_id: p.id, lat: p.lat, lon: p.lon,
       probability: f.probability, risk_level: toRisk(f.risk_level_en),
       target_date: addDaysISO(p.issue_date, f.lead_weeks * 7),
+      issue_date: p.issue_date,
       generated_at: c.generated_at, model_version: 'deepseek-prov-v1',
     };
   });

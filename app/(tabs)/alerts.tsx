@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors, DesignTokens, GlassStyle } from '@/constants/theme';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
+import { HistoricalRunBanner } from '@/components/forecast/HistoricalRunBanner';
 import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
@@ -195,6 +196,10 @@ export default function AlertsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Historical-run notice: forecast dates are early 2024 because the
+            model's latest complete-feature issue_date is 2023-12-31. */}
+        <HistoricalRunBanner issueDate={mapPoints[0]?.issue_date} />
+
         {/* ── National two-tier alert roll-up ──
             Four explicit states so "all clear" is never confused with "no data":
             loading → spinner; error OR empty fetch → message + Retry;

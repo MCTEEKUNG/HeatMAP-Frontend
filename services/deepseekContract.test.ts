@@ -28,6 +28,7 @@ describe('deepseekContract transforms', () => {
     expect(pts).toHaveLength(1);
     expect(pts[0]).toMatchObject({ province_id: 1, lat: 13.75, lon: 100.5, risk_level: 'extreme' });
     expect(pts[0].target_date).toBe('2024-01-14');
+    expect(pts[0].issue_date).toBe('2023-12-31');
   });
   it('provinceDays: lead 2-6 with weekly target dates', () => {
     const days = provinceDays(sample as any, 1);
