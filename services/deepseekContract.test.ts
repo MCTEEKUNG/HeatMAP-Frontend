@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapPoints, provinceDays, RISK_EN_TO_APP } from './deepseekContract';
+import { mapPoints, provinceDays, RISK_EN_TO_APP, assertContract } from './deepseekContract';
 
 const sample = {
   schema_version: 1, model: 'logistic_balanced_cal', generated_at: '2026-06-13T09:00:00+00:00', n_provinces: 1,
@@ -39,5 +39,11 @@ describe('deepseekContract transforms', () => {
   });
   it('provinceDays: unknown id -> empty', () => {
     expect(provinceDays(sample as any, 999)).toEqual([]);
+  });
+  it('assertContract: passes schema_version 1', () => {
+    expect(assertContract(sample as any).schema_version).toBe(1);
+  });
+  it('assertContract: throws on unsupported schema_version', () => {
+    expect(() => assertContract({ ...sample, schema_version: 2 } as any)).toThrow(/schema_version/);
   });
 });

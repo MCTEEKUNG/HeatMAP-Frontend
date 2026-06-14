@@ -8,6 +8,14 @@ interface RawForecast { lead_weeks: number; probability: number; ratio_vs_normal
 interface RawProvince { id: number; lat: number; lon: number; issue_date: string; forecasts: RawForecast[]; }
 export interface Contract { schema_version: number; generated_at: string; provinces: RawProvince[]; }
 
+export const SUPPORTED_SCHEMA = 1;
+export function assertContract(c: Contract): Contract {
+  if (c.schema_version !== SUPPORTED_SCHEMA) {
+    throw new Error(`schema_version ไม่รองรับ: ${c.schema_version} (รองรับ ${SUPPORTED_SCHEMA})`);
+  }
+  return c;
+}
+
 function addDaysISO(iso: string, days: number): string {
   const d = new Date(iso + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + days);
@@ -46,9 +54,9 @@ let _cache: Promise<Contract> | null = null;
 const FORECAST_URL = process.env.EXPO_PUBLIC_FORECAST_URL || '/forecast_provinces.json';
 export function loadContract(): Promise<Contract> {
   if (!_cache) {
-    _cache = fetch(FORECAST_URL).then((r) => {
+    _cache = fetch(FORECAST_URL).then(async (r) => {
       if (!r.ok) throw new Error(`โหลด forecast ไม่สำเร็จ (${r.status})`);
-      return r.json() as Promise<Contract>;
+      return assertContract((await r.json()) as Contract);
     }).catch((e) => { _cache = null; throw e; });
   }
   return _cache;
