@@ -198,7 +198,7 @@ export default function AlertsScreen() {
       >
         {/* Historical-run notice: forecast dates are early 2024 because the
             model's latest complete-feature issue_date is 2023-12-31. */}
-        <HistoricalRunBanner issueDate={mapPoints[0]?.issue_date} />
+        <HistoricalRunBanner issueDate={mapPoints[0]?.issue_date} generatedAt={mapPoints[0]?.generated_at} />
 
         {/* ── National two-tier alert roll-up ──
             Four explicit states so "all clear" is never confused with "no data":

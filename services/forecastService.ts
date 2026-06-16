@@ -197,6 +197,19 @@ export function riskPercent(probability: number | null | undefined): number {
   return Math.round(((probability ?? 0) as number) * 100);
 }
 
+/** true ถ้า issue_date เก่ากว่า staleDays เทียบ generatedAt (ใช้ตัดสินว่าโชว์ banner historical ไหม) */
+export function isHistoricalRun(
+  issueDate?: string,
+  generatedAt?: string,
+  staleDays = 14,
+): boolean {
+  if (!issueDate) return false;
+  const ref = generatedAt ? new Date(generatedAt) : new Date();
+  const issued = new Date(issueDate + 'T00:00:00Z');
+  const ageDays = (ref.getTime() - issued.getTime()) / 86_400_000;
+  return ageDays > staleDays;
+}
+
 export function formatForecastDate(dateStr: string): string {
   // Parse as UTC to avoid the date shifting by one day in negative-offset timezones.
   // Dates from the server are plain YYYY-MM-DD strings (no time component), so we

@@ -12,14 +12,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors, DesignTokens } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { formatForecastDate } from '@/services/forecastService';
+import { formatForecastDate, isHistoricalRun } from '@/services/forecastService';
 
-export function HistoricalRunBanner({ issueDate }: { issueDate?: string }) {
+export function HistoricalRunBanner({ issueDate, generatedAt }: { issueDate?: string; generatedAt?: string }) {
   const { isDarkMode, language } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
-  if (!issueDate) return null;
+  if (!isHistoricalRun(issueDate, generatedAt)) return null;
 
-  const issued = formatForecastDate(issueDate);
+  const issued = formatForecastDate(issueDate!);
   const text =
     language === 'th'
       ? `โมเดลรันย้อนหลัง · ออกพยากรณ์ ${issued} — วันที่ด้านล่างเป็นข้อมูลอดีตเพื่อสาธิต`
