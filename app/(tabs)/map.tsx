@@ -217,23 +217,22 @@ export default function MapScreen() {
     [myProvince, mapPoints],
   );
 
-  // Risk accent colour — calm ramp; warm ONLY because it encodes risk
+  // Hero card — all three values (colour, label, probability) derive from the
+  // same myProvincePoint so they always describe the same province.
+  const heroRiskLevel = dataReady ? (myProvincePoint?.risk_level ?? null) : null;
   const heatColor =
-    heroSeverity === 'extreme' ? RiskColors.extreme
-    : heroSeverity === 'high' ? RiskColors.warning
-    : heroSeverity === 'moderate' ? RiskColors.watch
-    : dataReady ? RiskColors.safe
-    : theme.textSecondary;   // loading / error / empty → neutral grey
-  // Public risk-tier wording — colour = RISK level, NOT "a heatwave is happening".
-  // extreme→เตือนภัย(warning), high→เฝ้าระวัง(watch), moderate→เฝ้าระวังเบื้องต้น, low→ความเสี่ยงต่ำ.
+    heroRiskLevel === 'High'     ? RiskColors.warning
+    : heroRiskLevel === 'Elevated' ? RiskColors.watch
+    : heroRiskLevel === 'Normal'   ? RiskColors.safe
+    : dataReady                    ? RiskColors.safe
+    : theme.textSecondary;
   const riskLabel =
     !dataReady
       ? (status === 'loading' ? t('loading') : t('dataUnavailable'))
       : myProvincePoint?.risk_level_th ?? t('lowRisk');
-  // Calibrated probability as a percent for the hero ("โอกาสเสี่ยง 35%") — makes
-  // clear that orange/red is a CHANCE, not a confirmed event.
-  const riskPct = dataReady && userGridCell &&
-    typeof userGridCell.probability === 'number' ? userGridCell.probability : null;
+  const riskPct = dataReady && myProvincePoint
+    ? Math.round((myProvincePoint.probability ?? 0) * 100)
+    : null;
 
   // Calculate responsive values
 
