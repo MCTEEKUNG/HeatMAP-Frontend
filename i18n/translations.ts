@@ -91,6 +91,7 @@ export interface Translations {
   offlineData: string;
   provinceForecastTitle: string;
   sevenDayForecast: string;
+  weeklyOutlook: string;
   noForecastData: string;
 
   // Common
@@ -204,6 +205,7 @@ const en: Record<TranslationKey, string> = {
   offlineData: 'Offline — showing bundled province list',
   provinceForecastTitle: 'Province forecast',
   sevenDayForecast: '2–6 week outlook',
+  weeklyOutlook: '5-Week Outlook',
   noForecastData: 'No forecast available for this province yet.',
 
   // Common
@@ -314,6 +316,7 @@ const th: Record<TranslationKey, string> = {
   offlineData: 'ออฟไลน์ — แสดงรายชื่อจังหวัดที่มากับแอป',
   provinceForecastTitle: 'พยากรณ์รายจังหวัด',
   sevenDayForecast: 'แนวโน้ม 2–6 สัปดาห์',
+  weeklyOutlook: 'พยากรณ์ 5 สัปดาห์',
   noForecastData: 'ยังไม่มีพยากรณ์สำหรับจังหวัดนี้',
 
   // Common

@@ -7,7 +7,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, generateThailandGrid, normalizeProvinceName, type GridCell, type Severity, type ProvinceRisk } from '@/components/map';
 import { useLocation } from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { getForecastMap, riskLevelToSeverity, formatGeneratedAt, type MapForecastPoint } from '@/services/forecastService';
+import { getForecastMap, formatGeneratedAt, type MapForecastPoint } from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
 
@@ -122,7 +122,10 @@ export default function MapScreen() {
         const lng = (cell.east  + cell.west)  / 2;
         const np = nearestPoint(lat, lng, points);
         if (!np) return cell;
-        const severity: Severity = riskLevelToSeverity(np.risk_level);
+        const severity: Severity =
+          np.risk_level === 'High'     ? 'extreme'
+          : np.risk_level === 'Elevated' ? 'high'
+          : 'low';
         // probability stored as 0–100 for the cell metadata
         const probability = Math.round((np.probability ?? 0) * 100);
         return { ...cell, severity, probability } as GridCell;
@@ -147,11 +150,9 @@ export default function MapScreen() {
     for (const pt of mapPoints) {
       const prov = byId.get(pt.province_id);
       if (!prov) continue;
-      const sev = riskLevelToSeverity(pt.risk_level);
       const level =
-        sev === 'extreme' ? 'extreme'
-        : sev === 'high' ? 'warning'
-        : sev === 'moderate' ? 'watch'
+        pt.risk_level === 'High'     ? 'warning'
+        : pt.risk_level === 'Elevated' ? 'watch'
         : 'safe';
       rec[normalizeProvinceName(prov.name_en)] = {
         level,
@@ -196,27 +197,6 @@ export default function MapScreen() {
   // status === 'ready'; otherwise show a neutral loading/no-data state.
   const dataReady = status === 'ready';
   const heroSeverity = dataReady ? currentSeverity : null;
-  // Risk accent colour — calm ramp; warm ONLY because it encodes risk
-  const heatColor =
-    heroSeverity === 'extreme' ? RiskColors.extreme
-    : heroSeverity === 'high' ? RiskColors.warning
-    : heroSeverity === 'moderate' ? RiskColors.watch
-    : dataReady ? RiskColors.safe
-    : theme.textSecondary;   // loading / error / empty → neutral grey
-  // Public risk-tier wording — colour = RISK level, NOT "a heatwave is happening".
-  // extreme→เตือนภัย(warning), high→เฝ้าระวัง(watch), moderate→เฝ้าระวังเบื้องต้น, low→ความเสี่ยงต่ำ.
-  const riskLabel =
-    !dataReady
-      ? (status === 'loading' ? t('loading') : t('dataUnavailable'))
-    : heroSeverity === 'extreme' ? t('riskVeryHigh')
-    : heroSeverity === 'high' ? t('riskHigh')
-    : heroSeverity === 'moderate' ? t('moderate')
-    : t('lowRisk');
-  // Calibrated probability as a percent for the hero ("โอกาสเสี่ยง 35%") — makes
-  // clear that orange/red is a CHANCE, not a confirmed event.
-  const riskPct = dataReady && userGridCell &&
-    typeof userGridCell.probability === 'number' ? userGridCell.probability : null;
-
   // The user's own province — nearest of the 77 centroids to their GPS fix.
   // (provinces always populated: getProvinces falls back to a bundled list.)
   const myProvince = useMemo(() => {
@@ -231,6 +211,29 @@ export default function MapScreen() {
     }
     return best;
   }, [userLocation, provinces]);
+
+  const myProvincePoint = useMemo(
+    () => myProvince ? mapPoints.find((p) => p.province_id === myProvince.id) ?? null : null,
+    [myProvince, mapPoints],
+  );
+
+  // Risk accent colour — calm ramp; warm ONLY because it encodes risk
+  const heatColor =
+    heroSeverity === 'extreme' ? RiskColors.extreme
+    : heroSeverity === 'high' ? RiskColors.warning
+    : heroSeverity === 'moderate' ? RiskColors.watch
+    : dataReady ? RiskColors.safe
+    : theme.textSecondary;   // loading / error / empty → neutral grey
+  // Public risk-tier wording — colour = RISK level, NOT "a heatwave is happening".
+  // extreme→เตือนภัย(warning), high→เฝ้าระวัง(watch), moderate→เฝ้าระวังเบื้องต้น, low→ความเสี่ยงต่ำ.
+  const riskLabel =
+    !dataReady
+      ? (status === 'loading' ? t('loading') : t('dataUnavailable'))
+      : myProvincePoint?.risk_level_th ?? t('lowRisk');
+  // Calibrated probability as a percent for the hero ("โอกาสเสี่ยง 35%") — makes
+  // clear that orange/red is a CHANCE, not a confirmed event.
+  const riskPct = dataReady && userGridCell &&
+    typeof userGridCell.probability === 'number' ? userGridCell.probability : null;
 
   // Calculate responsive values
 

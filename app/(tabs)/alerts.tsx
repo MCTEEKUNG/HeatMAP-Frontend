@@ -11,10 +11,9 @@ import { ScaledText } from '@/components/ui/ScaledText';
 import { useProvinceForecast } from '@/hooks/useProvinceForecast';
 import {
   getForecastMap,
-  getAlertTier,
+  alertTierFromRiskLevel,
   alertTierColor,
   alertTierLabel,
-  assertAlertThresholdsCurrent,
   formatForecastDate,
   formatGeneratedAt,
   riskPercent,
@@ -71,8 +70,6 @@ export default function AlertsScreen() {
         // Empty result is "no data", not a real all-clear — flag it as such.
         setMapError(pts.length === 0);
         setMapLoading(false);
-        // Dev-visible guard: client alert thresholds are tuned per model version.
-        assertAlertThresholdsCurrent(pts[0]?.model_version);
       })
       .catch(() => {
         if (!alive) return;
@@ -91,9 +88,7 @@ export default function AlertsScreen() {
     let watch = 0;
     let soonest: string | null = null;
     for (const p of mapPoints) {
-      // Alert tier from PROBABILITY (sensitive 0.217/0.281), decoupled from the
-      // calmer map colours (risk_level). See src/risk.py.
-      const tier = getAlertTier(p.probability);
+      const tier = alertTierFromRiskLevel(p.risk_level);
       if (tier === 'warning') warning++;
       else if (tier === 'watch') watch++;
       if (soonest === null || p.target_date < soonest) soonest = p.target_date;
@@ -126,7 +121,7 @@ export default function AlertsScreen() {
     loading: forecastLoading,
     error: forecastError,
     refresh: refreshProvince,
-  } = useProvinceForecast(provinceId, 7);
+  } = useProvinceForecast(provinceId);
 
   // Combined state for the per-province hero/calendar. Because `provinceId` is
   // derived from the national map, a map cold-start/timeout leaves the province
@@ -151,11 +146,9 @@ export default function AlertsScreen() {
   // the nearest upcoming target_date).
   const todayForecast = provinceDays.length > 0 ? provinceDays[0] : null;
   const todayRisk: RiskLevel = todayForecast
-    ? tierToRisk(getAlertTier(todayForecast.probability))
+    ? tierToRisk(alertTierFromRiskLevel(todayForecast.risk_level))
     : 'safe';
 
-  // Summary across the 7-day horizon (predicted_label now carries the tuned
-  // operating point from the model bundle — see pipeline/run_forecast.py)
   const heatwaveDays = useMemo(
     () => provinceDays.filter((d) => Boolean(d.predicted_label)).length,
     [provinceDays],
@@ -341,7 +334,7 @@ export default function AlertsScreen() {
             ) : (
               <>
                 {provinceDays.map((day, i) => {
-                  const tier = getAlertTier(day.probability);
+                  const tier = alertTierFromRiskLevel(day.risk_level);
                   const tierColor = alertTierColor(tier, isDarkMode);
                   return (
                     <View

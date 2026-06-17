@@ -17,7 +17,6 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useProvinceForecast } from '@/hooks/useProvinceForecast';
 import {
   getRiskColor,
-  riskLevelToSeverity,
   formatGeneratedAt,
   formatForecastDate,
 } from '@/services/forecastService';
@@ -25,16 +24,14 @@ import type { Province } from '@/services/provincesService';
 
 interface Props {
   province: Province | null;
-  days?: number;
 }
 
-export function ProvinceForecastPanel({ province, days = 7 }: Props) {
+export function ProvinceForecastPanel({ province }: Props) {
   const { isDarkMode, language, t } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
 
   const { days: forecast, generatedAt, loading, error, refresh } = useProvinceForecast(
     province?.id ?? null,
-    days,
   );
 
   if (!province) return null;
@@ -47,7 +44,7 @@ export function ProvinceForecastPanel({ province, days = 7 }: Props) {
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.title, { color: theme.text }]}>{provinceName}</Text>
-          <Text style={[styles.subtitle, { color: theme.textMuted }]}>{t('sevenDayForecast')}</Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>{t('weeklyOutlook')}</Text>
         </View>
         {!!asOf && (
           <View style={styles.asOfRow}>
@@ -87,8 +84,7 @@ export function ProvinceForecastPanel({ province, days = 7 }: Props) {
       {!loading && !error && forecast.length > 0 && (
         <View style={styles.daysRow}>
           {forecast.map((d, i) => {
-            const sev = riskLevelToSeverity(d.risk_level);
-            const color = getRiskColor(sev);
+            const color = getRiskColor(d.risk_level);
             const weekNum = i + 2;
             const weekLabel = language === 'th' ? `สัปดาห์ ${weekNum}` : `Wk ${weekNum}`;
             return (
@@ -103,6 +99,9 @@ export function ProvinceForecastPanel({ province, days = 7 }: Props) {
                 <View style={[styles.dayDot, { backgroundColor: color }]} />
                 <Text style={[styles.dayProb, { color }]}>
                   {Math.round((d.probability ?? 0) * 100)}%
+                </Text>
+                <Text style={[styles.dayRatio, { color, opacity: 0.75 }]}>
+                  {(d.ratio_vs_normal ?? 0).toFixed(1)}× ปกติ
                 </Text>
               </View>
             );
@@ -151,4 +150,5 @@ const styles = StyleSheet.create({
   dayDate: { fontSize: 10, fontWeight: '600' },
   dayDot: { width: 8, height: 8, borderRadius: 4 },
   dayProb: { fontSize: 12, fontWeight: '700' },
+  dayRatio: { fontSize: 9, fontWeight: '600' },
 });
