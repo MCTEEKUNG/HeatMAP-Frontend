@@ -1,12 +1,27 @@
 import type { MapForecastPoint, ProvinceForecastDay, RiskLevel } from './forecastService';
 
-export const RISK_EN_TO_APP: Record<string, RiskLevel> = {
-  Low: 'low', Normal: 'moderate', Elevated: 'high', High: 'extreme',
-};
-
-interface RawForecast { lead_weeks: number; probability: number; ratio_vs_normal: number; risk_level_en: string; }
-interface RawProvince { id: number; lat: number; lon: number; issue_date: string; forecasts: RawForecast[]; }
-export interface Contract { schema_version: number; generated_at: string; provinces: RawProvince[]; }
+interface RawForecast {
+  lead_weeks: number;
+  probability: number;
+  ratio_vs_normal: number;
+  risk_level_en: string;
+  risk_level_th: string;
+  climatology_base_rate: number;
+}
+interface RawProvince {
+  id: number;
+  lat: number;
+  lon: number;
+  issue_date: string;
+  forecasts: RawForecast[];
+}
+export interface Contract {
+  schema_version: number;
+  generated_at: string;
+  model: string;
+  n_provinces: number;
+  provinces: RawProvince[];
+}
 
 export const SUPPORTED_SCHEMA = 1;
 export function assertContract(c: Contract): Contract {
@@ -21,18 +36,23 @@ function addDaysISO(iso: string, days: number): string {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
-function toRisk(en: string): RiskLevel { return RISK_EN_TO_APP[en] ?? 'low'; }
-const SEVERITY_RANK: Record<RiskLevel, number> = { low: 0, moderate: 1, high: 2, extreme: 3 };
 
 export function mapPoints(c: Contract): MapForecastPoint[] {
   return c.provinces.map((p) => {
     const f = p.forecasts.find((x) => x.lead_weeks === 2) ?? p.forecasts[0];
     return {
-      province_id: p.id, lat: p.lat, lon: p.lon,
-      probability: f.probability, risk_level: toRisk(f.risk_level_en),
+      province_id: p.id,
+      lat: p.lat,
+      lon: p.lon,
+      probability: f.probability,
+      risk_level: f.risk_level_en as RiskLevel,
+      risk_level_th: f.risk_level_th,
+      ratio_vs_normal: f.ratio_vs_normal,
+      climatology_base_rate: f.climatology_base_rate,
       target_date: addDaysISO(p.issue_date, f.lead_weeks * 7),
       issue_date: p.issue_date,
-      generated_at: c.generated_at, model_version: 'deepseek-prov-v1',
+      generated_at: c.generated_at,
+      model_version: c.model,
     };
   });
 }
@@ -40,15 +60,16 @@ export function mapPoints(c: Contract): MapForecastPoint[] {
 export function provinceDays(c: Contract, provinceId: number): ProvinceForecastDay[] {
   const p = c.provinces.find((x) => x.id === provinceId);
   if (!p) return [];
-  return [...p.forecasts].sort((a, b) => a.lead_weeks - b.lead_weeks).map((f) => {
-    const risk = toRisk(f.risk_level_en);
-    return {
-      target_date: addDaysISO(p.issue_date, f.lead_weeks * 7),
-      probability: f.probability,
-      predicted_label: SEVERITY_RANK[risk] >= SEVERITY_RANK.high,
-      risk_level: risk, swbgt_pred: 0, generated_at: c.generated_at,
-    };
-  });
+  return [...p.forecasts].sort((a, b) => a.lead_weeks - b.lead_weeks).map((f) => ({
+    target_date: addDaysISO(p.issue_date, f.lead_weeks * 7),
+    probability: f.probability,
+    predicted_label: f.risk_level_en === 'High',
+    risk_level: f.risk_level_en as RiskLevel,
+    risk_level_th: f.risk_level_th,
+    ratio_vs_normal: f.ratio_vs_normal,
+    climatology_base_rate: f.climatology_base_rate,
+    generated_at: c.generated_at,
+  }));
 }
 
 let _cache: Promise<Contract> | null = null;
