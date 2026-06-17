@@ -20,6 +20,8 @@ import {
   type AlertTier,
   type MapForecastPoint,
 } from '@/services/forecastService';
+import { HeatHealthCard } from '@/components/health/HeatHealthCard';
+import { tierToRiskLevel, type AlertDisplayTier } from '@/constants/riskGuidance';
 
 // ─── 3-tier risk colour helpers ───────────────────────────────────────────────
 // CONVERGED: this screen now reads ONLY the 77-province model
@@ -306,6 +308,11 @@ export default function AlertsScreen() {
           )}
         </View>
 
+        {/* ── Health guidance card (keyed to today's provincial risk) ── */}
+        {!provinceLoading && !provinceFailed && todayForecast && (
+          <HeatHealthCard risk={tierToRiskLevel(todayRisk as AlertDisplayTier)} />
+        )}
+
         {/* ── 2–6 Week Outlook ── */}
         <View style={styles.calendarSection}>
           <ScaledText variant="labelMedium" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
@@ -529,20 +536,6 @@ const styles = StyleSheet.create({
   dailyDay: { width: 52, fontWeight: '600' },
   dailyMiddle: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 },
   dailyTemps: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-
-  // Safety button
-  safetyButton: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'center',
-    gap:            DesignTokens.spacing.sm,
-    paddingVertical: DesignTokens.spacing.lg,
-    borderRadius:   DesignTokens.borderRadius.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
-  },
-  safetyButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 1 },
 
   // Bottom nav
   bottomNav: {

@@ -115,6 +115,8 @@ export interface GridCell {
   // Grid position for reference
   gridRow: number;
   gridCol: number;
+  // Nearest province (set in map.tsx after forecast + provinces load; native tap-selection)
+  provinceName?: string;
 }
 
 // Default map region - showing all of Thailand
@@ -210,6 +212,7 @@ function WebLeafletMap({
   isDarkMode,
   neutral,
   provinceRisk,
+  onSelectProvince,
 }: {
   gridData: GridCell[];
   userLocation: { latitude: number; longitude: number } | null;
@@ -217,6 +220,7 @@ function WebLeafletMap({
   isDarkMode: boolean;
   neutral: boolean;
   provinceRisk?: Record<string, ProvinceRisk> | null;
+  onSelectProvince?: (provinceName: string) => void;
 }) {
   const [MapView, setMapView] = useState<any>(null);
   const [thailandGeo, setThailandGeo] = useState<any>(null);
@@ -359,10 +363,15 @@ function WebLeafletMap({
             return { color: '#B3C4D2', weight: 0.6, fillColor: '#7E93A6', fillOpacity: 0.05 };
           }}
           onEachFeature={(feature: any, layer: any) => {
-            const z = riskForFeatureName(feature?.properties?.name ?? '', provinceRisk!);
+            const featureName = feature?.properties?.name ?? '';
+            const z = riskForFeatureName(featureName, provinceRisk!);
             layer.bindPopup(z
               ? `<b>${z.nameTh}</b><br>ระดับ${RISK_LABEL_TH[z.level]} · โอกาสเกิด ${Math.round(z.probability)}%`
-              : `<b>${feature?.properties?.name ?? ''}</b><br>ความเสี่ยงต่ำ`);
+              : `<b>${featureName}</b><br>ความเสี่ยงต่ำ`);
+            // Wire click to province selection
+            layer.on('click', () => {
+              onSelectProvince?.(normalizeProvinceName(featureName));
+            });
           }}
         />
       ) : (
@@ -402,12 +411,14 @@ function NativeMapView({
   onGetLocation,
   isDarkMode,
   neutral,
+  onSelectProvince,
 }: {
   gridData: GridCell[];
   userLocation: { latitude: number; longitude: number } | null;
   onGetLocation: () => void;
   isDarkMode: boolean;
   neutral: boolean;
+  onSelectProvince?: (provinceName: string) => void;
 }) {
   const [mapModule, setMapModule] = useState<any>(null);
 
@@ -466,6 +477,10 @@ function NativeMapView({
             fillColor={getSeverityColor(sev)}
             strokeColor={getSeverityBorderColor(sev)}
             strokeWidth={2}
+            tappable={true}
+            onPress={() => {
+              if (cell.provinceName) onSelectProvince?.(cell.provinceName);
+            }}
           />
         );
       })}
@@ -499,6 +514,7 @@ export function MapGrid({
   isDarkMode = false,
   neutral = false,
   provinceRisk = null,
+  onSelectProvince,
 }: {
   gridData?: GridCell[];
   userLocation?: { latitude: number; longitude: number } | null;
@@ -511,6 +527,9 @@ export function MapGrid({
   // Per-province risk keyed by NORMALISED English name (normalizeProvinceName).
   // When provided (web), renders the honest province choropleth instead of the grid.
   provinceRisk?: Record<string, ProvinceRisk> | null;
+  // Callback fired when user taps a province on the map (web: GeoJSON polygon;
+  // native: grid cell with provinceName populated by map.tsx).
+  onSelectProvince?: (provinceName: string) => void;
 }) {
   const [isWeb, setIsWeb] = useState(false);
   
@@ -530,6 +549,7 @@ export function MapGrid({
           isDarkMode={isDarkMode}
           neutral={neutral}
           provinceRisk={provinceRisk}
+          onSelectProvince={onSelectProvince}
         />
       ) : (
         <NativeMapView
@@ -538,6 +558,7 @@ export function MapGrid({
           onGetLocation={handleGetLocation}
           isDarkMode={isDarkMode}
           neutral={neutral}
+          onSelectProvince={onSelectProvince}
         />
       )}
     </View>

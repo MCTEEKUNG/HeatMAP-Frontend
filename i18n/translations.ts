@@ -71,7 +71,20 @@ export interface Translations {
   dressAppropriatelyDesc: string;
   findCool: string;
   findCoolDesc: string;
-  
+
+  // Health guidance (Tasks 3–7)
+  healthGuidanceTitle: string;
+  whatsHappening: string;
+  whatToDo: string;
+  whoAtRisk: string;
+  warningSigns: string;
+  viewFullGuidance: string;
+  safetyScreenTitle: string;
+  heatExhaustion: string;
+  heatStroke: string;
+  firstAid: string;
+  callEmergency: string;
+
   // Metrics
   wetBulb: string;
   aqi: string;
@@ -185,7 +198,20 @@ const en: Record<TranslationKey, string> = {
   dressAppropriatelyDesc: 'Wear light-colored, breathable clothing.',
   findCool: 'Find Cool',
   findCoolDesc: 'Locate nearest cooling station.',
-  
+
+  // Health guidance (Tasks 3–7)
+  healthGuidanceTitle: 'Health Guidance',
+  whatsHappening: "What's happening",
+  whatToDo: 'What to do',
+  whoAtRisk: 'Who is most at risk',
+  warningSigns: 'Warning signs',
+  viewFullGuidance: 'View full safety guide',
+  safetyScreenTitle: 'Heat Safety Guide',
+  heatExhaustion: 'Heat Exhaustion (เพลียแดด)',
+  heatStroke: 'Heat Stroke (ลมแดด) — EMERGENCY',
+  firstAid: 'First Aid Steps',
+  callEmergency: '🆘 Call 1669 — Emergency',
+
   // Metrics
   wetBulb: 'Wet Bulb',
   aqi: 'AQI',
@@ -296,7 +322,20 @@ const th: Record<TranslationKey, string> = {
   dressAppropriatelyDesc: 'สวมเสื้อผ้าสีอ่อน ระบายอากาศได้ดี',
   findCool: 'หาที่เย็น',
   findCoolDesc: 'ค้นหาศูนย์ความเย็นใกล้ที่สุด',
-  
+
+  // Health guidance (Tasks 3–7)
+  healthGuidanceTitle: 'คำแนะนำด้านสุขภาพ',
+  whatsHappening: 'เกิดอะไรขึ้น',
+  whatToDo: 'ควรทำอะไร',
+  whoAtRisk: 'ใครเสี่ยงที่สุด',
+  warningSigns: 'สัญญาณเตือน',
+  viewFullGuidance: 'ดูคู่มือความปลอดภัยฉบับเต็ม',
+  safetyScreenTitle: 'คู่มือความปลอดภัยจากคลื่นความร้อน',
+  heatExhaustion: 'เพลียแดด',
+  heatStroke: 'ลมแดด (ฮีทสโตรก) — ฉุกเฉิน',
+  firstAid: 'ขั้นตอนปฐมพยาบาล',
+  callEmergency: '🆘 โทร 1669 — ฉุกเฉิน',
+
   // Metrics
   wetBulb: 'เทอร์โมมิเตอร์เปียก',
   aqi: 'AQI',

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Colors, DesignTokens, GlassStyle, RiskBg, RiskColors, FontFamily, useResponsive } from '@/constants/theme';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
@@ -7,9 +7,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, generateThailandGrid, normalizeProvinceName, type GridCell, type Severity, type ProvinceRisk } from '@/components/map';
 import { useLocation } from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { getForecastMap, formatGeneratedAt, type MapForecastPoint } from '@/services/forecastService';
+import { getForecastMap, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint } from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
+import { useRouter } from 'expo-router';
+import { guidanceFor } from '@/constants/riskGuidance';
 
 // Helper function to find grid cell containing user's location
 const findUserGridCell = (
@@ -53,7 +55,8 @@ const nearestPoint = (
 };
 
 export default function MapScreen() {
-  const { isDarkMode, t } = useSettings();
+  const { isDarkMode, t, language } = useSettings();
+  const router = useRouter();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
   // Start with a neutral (uncoloured) grid — overwritten once forecast loads
   const [gridData, setGridData] = useState<GridCell[]>(generateThailandGrid());
@@ -72,6 +75,8 @@ export default function MapScreen() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [provincesLoading, setProvincesLoading] = useState(true);
   const [selectedProvince, setSelectedProvince] = useState<Province | null>(null);
+  // Ref so loadForecastMap (a useCallback) can access provinces without stale closure.
+  const provincesRef = useRef<Province[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -86,6 +91,9 @@ export default function MapScreen() {
       active = false;
     };
   }, []);
+
+  // Keep provincesRef in sync so loadForecastMap can read it without a stale closure.
+  useEffect(() => { provincesRef.current = provinces; }, [provinces]);
 
   // Location hook — declared early so lat/lng are available for map positioning
   const {
@@ -117,6 +125,8 @@ export default function MapScreen() {
       setMapGeneratedAt(points[0]?.generated_at ?? null);
 
       const baseGrid = generateThailandGrid();
+      // Build province lookup once for the whole grid pass.
+      const byId = new Map((provincesRef.current ?? []).map((p) => [p.id, p]));
       const updated = baseGrid.map(cell => {
         const lat = (cell.north + cell.south) / 2;
         const lng = (cell.east  + cell.west)  / 2;
@@ -128,7 +138,9 @@ export default function MapScreen() {
           : 'low';
         // probability stored as 0–100 for the cell metadata
         const probability = Math.round((np.probability ?? 0) * 100);
-        return { ...cell, severity, probability } as GridCell;
+        const prov = byId.get(np.province_id);
+        const provinceName = prov ? normalizeProvinceName(prov.name_en) : undefined;
+        return { ...cell, severity, probability, provinceName } as GridCell;
       });
       setGridData(updated);
       setStatus('ready');
@@ -249,6 +261,14 @@ export default function MapScreen() {
     }
   }, [locationStatus, requestPermission, getCurrentLocation]);
 
+  // Handle province tap from the map — find province record and open the panel.
+  const handleSelectProvince = useCallback((normalizedName: string) => {
+    const match = provinces.find(
+      (p) => normalizeProvinceName(p.name_en) === normalizedName
+    );
+    if (match) setSelectedProvince(match);
+  }, [provinces]);
+
   // Auto-get location on first load (optional)
   useEffect(() => {
     // Auto-request location on mount
@@ -284,6 +304,7 @@ export default function MapScreen() {
           neutral={status !== 'ready'}
           provinceRisk={provinceRisk}
           style={styles.mapGrid}
+          onSelectProvince={handleSelectProvince}
         />
 
         {/* Load-state overlays — keep "no data" visually distinct from low risk */}
@@ -414,6 +435,27 @@ export default function MapScreen() {
             )}
           </View>
 
+          {/* Plain-language "what's happening" guidance line */}
+          {dataReady && myProvincePoint && (
+            <ScaledText style={[styles.ucGuidance, { color: theme.textMuted }]} numberOfLines={2}>
+              {guidanceFor(myProvincePoint.risk_level, language).whatsHappening}
+            </ScaledText>
+          )}
+
+          {/* "ดูวิธีรับมือ" button */}
+          {dataReady && myProvincePoint && (
+            <TouchableOpacity
+              style={[styles.ucCta, { backgroundColor: alertTierColor(alertTierFromRiskLevel(myProvincePoint.risk_level), isDarkMode) + '22' }]}
+              onPress={() => router.push({ pathname: '/safety' as any, params: { risk: myProvincePoint!.risk_level } })}
+              accessibilityRole="button"
+              accessibilityLabel="ดูคู่มือความปลอดภัย"
+            >
+              <ScaledText style={[styles.ucCtaText, { color: alertTierColor(alertTierFromRiskLevel(myProvincePoint.risk_level), isDarkMode) }]}>
+                {'▸ ' + (language === 'th' ? 'ดูวิธีรับมือ' : 'See safety guide')}
+              </ScaledText>
+            </TouchableOpacity>
+          )}
+
           <View style={[styles.miniLegend, { borderTopColor: theme.border }]}>
             {([
               [RiskColors.safe, 'ปกติ'],
@@ -501,6 +543,9 @@ const styles = StyleSheet.create({
   },
   ucRisk: { fontSize: 19, fontFamily: FontFamily.display, fontWeight: '700', flexShrink: 1 },
   ucPct: { fontSize: 13, fontFamily: FontFamily.displaySemi, fontWeight: '600' },
+  ucGuidance: { fontSize: 11, fontFamily: FontFamily.body, marginTop: 4, lineHeight: 16 },
+  ucCta: { marginTop: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, alignSelf: 'flex-start' },
+  ucCtaText: { fontSize: 11.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
   ctaPrimary: {
     flexDirection: 'row',
     justifyContent: 'space-between',

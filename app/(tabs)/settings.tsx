@@ -8,9 +8,9 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
 // Keep in sync with models/model_card.json (served model) — judges read this.
 const MODEL_INFO = {
-  model: 'LightGBM · lgbm-v1',
-  coverage: '77 จังหวัด · พยากรณ์ 7 วัน',
-  source: 'Open-Meteo / ERA5 (1991–2025)',
+  model: 'Logistic Regression (Balanced) · Platt Cal',
+  coverage: '77 จังหวัด · พยากรณ์ล่วงหน้า 2-6 สัปดาห์',
+  source: 'ERA5 / CDS (1994–2025)',
 };
 
 /**
@@ -146,7 +146,7 @@ export default function SettingsScreen() {
             </View>
           ))}
           <ScaledText style={[styles.aboutNote, { color: theme.textMuted }]}>
-            {'"คลื่นความร้อน" ในระบบนี้ = วันที่ดัชนีความร้อน (รวมความชื้น) สูงกว่า 95% ของวันเดียวกันในรอบ 30 ปี และร้อนติดต่อกันอย่างน้อย 2 วัน — เกณฑ์เฉพาะพื้นที่ของแต่ละจังหวัด'}
+            {'"คลื่นความร้อน" ในระบบนี้ = อุณหภูมิสูงสุดรายวัน (Tmax) เกิน p90 ของวันเดียวกันในรอบ 30 ปี (1994–2023) ติดต่อกันอย่างน้อย 3 วัน ภายใน window 7 วัน — เกณฑ์ p90 คำนวณแยกรายจังหวัดและรายวัน'}
           </ScaledText>
         </View>
 

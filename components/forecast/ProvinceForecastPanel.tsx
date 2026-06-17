@@ -21,6 +21,8 @@ import {
   formatForecastDate,
 } from '@/services/forecastService';
 import type { Province } from '@/services/provincesService';
+import { HeatHealthCard } from '@/components/health/HeatHealthCard';
+import { worstRiskOf } from '@/constants/riskGuidance';
 
 interface Props {
   province: Province | null;
@@ -107,6 +109,10 @@ export function ProvinceForecastPanel({ province }: Props) {
             );
           })}
         </View>
+      )}
+
+      {!loading && !error && forecast.length > 0 && (
+        <HeatHealthCard risk={worstRiskOf(forecast)} compact />
       )}
     </View>
   );
