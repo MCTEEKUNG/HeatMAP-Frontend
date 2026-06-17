@@ -29,8 +29,9 @@ const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyrigh
 
 // ── Province choropleth (the model forecasts per PROVINCE per day — heatwaves
 // are regional, not point hotspots, so polygons are the honest rendering) ──
+export type ChoroplethLevel = RiskLevel | 'normal' | 'low';
 export interface ProvinceRisk {
-  level: RiskLevel;       // safe | watch | warning | extreme
+  level: ChoroplethLevel;
   nameTh: string;
   probability: number;    // 0-100
 }
@@ -64,9 +65,11 @@ export function riskForFeatureName(
   return null;
 }
 
-const RISK_LABEL_TH: Record<RiskLevel, string> = {
-  safe: 'ปกติ',
-  watch: 'เฝ้าระวัง',
+const RISK_LABEL_TH: Record<ChoroplethLevel, string> = {
+  low:     'ต่ำ',
+  normal:  'ปกติ',
+  safe:    'ปกติ',
+  watch:   'เฝ้าระวัง',
   warning: 'เตือนภัย',
   extreme: 'อันตราย',
 };
@@ -342,11 +345,16 @@ function WebLeafletMap({
           data={thailandGeo}
           style={(feature: any) => {
             const z = riskForFeatureName(feature?.properties?.name ?? '', provinceRisk!);
-            if (z && z.level !== 'safe') {
-              return {
-                color: '#FFFFFF', weight: 1,
-                fillColor: RiskColors[z.level], fillOpacity: 0.34,
-              };
+            if (z) {
+              if (z.level === 'normal') {
+                return { color: '#FFFFFF', weight: 1, fillColor: '#16a34a', fillOpacity: 0.34 };
+              }
+              if (z.level === 'low') {
+                return { color: '#FFFFFF', weight: 1, fillColor: '#64748b', fillOpacity: 0.25 };
+              }
+              if (z.level !== 'safe') {
+                return { color: '#FFFFFF', weight: 1, fillColor: RiskColors[z.level], fillOpacity: 0.34 };
+              }
             }
             return { color: '#B3C4D2', weight: 0.6, fillColor: '#7E93A6', fillOpacity: 0.05 };
           }}

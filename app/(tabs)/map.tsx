@@ -153,7 +153,8 @@ export default function MapScreen() {
       const level =
         pt.risk_level === 'High'     ? 'warning'
         : pt.risk_level === 'Elevated' ? 'watch'
-        : 'safe';
+        : pt.risk_level === 'Normal'   ? 'normal'
+        : 'low';
       rec[normalizeProvinceName(prov.name_en)] = {
         level,
         nameTh: prov.name_th,
