@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity, Pressable, Linking, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import * as Location from 'expo-location';
 import { Colors, FontFamily, RiskColors, GlassStyle } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
+import { GlassTabBar } from '@/components/ui/GlassTabBar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -231,6 +232,8 @@ const WARNINGS = [
 
 export default function SafetyScreen() {
   const { risk: riskParam } = useLocalSearchParams<{ risk?: string }>();
+  const segments = useSegments();
+  const isTabMode = segments[0] === '(tabs)';
   const router = useRouter();
   const { isDarkMode, language, t } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
@@ -441,16 +444,20 @@ out center 40;`;
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
 
-      {/* ── Header with back button ── */}
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.headerSide}
-          accessibilityRole="button"
-          accessibilityLabel={isTh ? 'กลับ' : 'Back'}
-        >
-          <ScaledText style={[styles.backChevron, { color: theme.text }]}>‹</ScaledText>
-        </TouchableOpacity>
+        {isTabMode ? (
+          <View style={styles.headerSide} />
+        ) : (
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.headerSide}
+            accessibilityRole="button"
+            accessibilityLabel={isTh ? 'กลับ' : 'Back'}
+          >
+            <ScaledText style={[styles.backChevron, { color: theme.text }]}>‹</ScaledText>
+          </TouchableOpacity>
+        )}
         <ScaledText style={[styles.headerTitle, { color: theme.text }]}>
           {t('safetyScreenTitle')}
         </ScaledText>
@@ -761,6 +768,7 @@ out center 40;`;
             : 'This is a risk forecast, not a confirmed heatwave event.'}
         </ScaledText>
       </ScrollView>
+      {isTabMode && <GlassTabBar active="safety" />}
     </SafeAreaView>
   );
 }

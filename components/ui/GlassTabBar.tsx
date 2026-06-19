@@ -7,12 +7,13 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { useSettings } from '@/hooks/useSettings';
 
-export type TabKey = 'map' | 'alerts' | 'profile';
+export type TabKey = 'map' | 'alerts' | 'safety' | 'profile';
 
 const TABS: { key: TabKey; icon: string; labelKey: string; route: string }[] = [
-  { key: 'map', icon: 'map.fill', labelKey: 'navMap', route: '/(tabs)/map' },
-  { key: 'alerts', icon: 'notifications', labelKey: 'navAlerts', route: '/(tabs)/alerts' },
-  { key: 'profile', icon: 'settings', labelKey: 'navSettings', route: '/(tabs)/settings' },
+  { key: 'map',     icon: 'map.fill',      labelKey: 'navMap',      route: '/(tabs)/map' },
+  { key: 'alerts',  icon: 'notifications', labelKey: 'navAlerts',   route: '/(tabs)/alerts' },
+  { key: 'safety',  icon: 'shield.fill',   labelKey: 'navSafety',   route: '/(tabs)/safety' },
+  { key: 'profile', icon: 'settings',      labelKey: 'navSettings', route: '/(tabs)/settings' },
 ];
 
 const SLOT_PCT = 100 / TABS.length;

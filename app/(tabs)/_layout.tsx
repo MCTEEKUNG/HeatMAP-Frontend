@@ -41,7 +41,17 @@ export default function TabLayout() {
           ),
         }}
       />
-      
+
+      <Tabs.Screen
+        name="safety"
+        options={{
+          title: 'Safety',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="shield.fill" color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="settings"
         options={{
