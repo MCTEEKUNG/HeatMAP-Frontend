@@ -30,12 +30,6 @@ nav a{color:var(--mut);font-size:12.5px;padding:4px 10px;border-radius:6px;
 nav a:hover{color:var(--ink);background:var(--card)}
 @media(max-width:700px){nav a{display:none}}
 
-.toc{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:40;
-  display:flex;flex-direction:column;gap:10px}
-.toc a{width:10px;height:10px;border-radius:50%;background:var(--line);
-  display:block;transition:all .3s;text-decoration:none}
-.toc a:hover,.toc a.on{background:var(--acc);transform:scale(1.4)}
-@media(max-width:700px){.toc{display:none}}
 
 .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
 
@@ -212,14 +206,6 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
   <a href="#result">ผลลัพธ์</a>
   <a href="#output">ปลายทาง</a>
 </nav>
-<nav class="toc" id="toc">
-  <a href="#top"></a>
-  <a href="#data"></a>
-  <a href="#mjo"></a>
-  <a href="#train"></a>
-  <a href="#result"></a>
-  <a href="#output"></a>
-</nav>
 
 <!-- ═══════ HERO ═══════ -->
 <header class="hero" id="top">
@@ -227,8 +213,6 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
   <div class="wrap">
     <span class="hero-tag reveal">HEATMAP · STORY OF THE AI</span>
     <h1 class="reveal d1">เราสร้าง AI<br/>พยากรณ์คลื่นความร้อนยังไง</h1>
-    <p class="sub reveal d2">จากดาวเทียมและอุปกรณ์วัดอุตุนิยมวิทยา สู่คะแนนความเสี่ยงบนมือถือ —
-      ทุกขั้นตอน เขียนไว้สำหรับทุกคนในทีม ไม่ต้องมีพื้นฐาน Data Science</p>
     <div class="statrow reveal d3">
       <div class="statbox"><div class="num">77</div><div class="lbl">จังหวัดทั่วไทย</div></div>
       <div class="statbox"><div class="num">30</div><div class="lbl">ปีของข้อมูลอากาศ</div></div>
@@ -724,26 +708,6 @@ if (bssrows) {
   }, { threshold:0.3 }).observe(bssrows);
 }
 
-// TOC
-const secs = [...document.querySelectorAll('section,header')];
-const links = [...document.querySelectorAll('#toc a')];
-new IntersectionObserver(es => {
-  es.forEach(e => {
-    if(e.isIntersecting){
-      const id = e.target.id;
-      links.forEach(a => a.classList.toggle('on', a.getAttribute('href')==='#'+id));
-    }
-  });
-}, { threshold:0.4 }).observe(secs[0]);
-secs.forEach(s => {
-  new IntersectionObserver(es => {
-    es.forEach(e => {
-      if(e.isIntersecting){
-        links.forEach(a => a.classList.toggle('on', a.getAttribute('href')==='#'+e.target.id));
-      }
-    });
-  }, { threshold:0.4 }).observe(s);
-});
 
 // heat dots
 const dotsEl = document.getElementById('dots');
