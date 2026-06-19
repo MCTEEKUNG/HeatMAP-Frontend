@@ -17,12 +17,10 @@ html{scroll-behavior:smooth}
 body{background:radial-gradient(1400px 800px at 65% -15%,#16294a 0%,var(--bg) 60%);
   color:var(--ink);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased}
 
-/* scroll progress */
 .heatbar{position:fixed;inset:0 0 auto 0;height:4px;z-index:100;
   background:linear-gradient(90deg,var(--cool),var(--acc),var(--hot));
   transform-origin:0;transform:scaleX(0);transition:transform .1s linear}
 
-/* nav */
 nav{position:sticky;top:4px;z-index:90;background:rgba(11,18,32,.9);
   backdrop-filter:blur(16px);border-bottom:1px solid var(--line);
   padding:0 24px;display:flex;align-items:center;gap:20px;height:50px}
@@ -32,7 +30,6 @@ nav a{color:var(--mut);font-size:12.5px;padding:4px 10px;border-radius:6px;
 nav a:hover{color:var(--ink);background:var(--card)}
 @media(max-width:700px){nav a{display:none}}
 
-/* TOC dots */
 .toc{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:40;
   display:flex;flex-direction:column;gap:10px}
 .toc a{width:10px;height:10px;border-radius:50%;background:var(--line);
@@ -40,7 +37,7 @@ nav a:hover{color:var(--ink);background:var(--card)}
 .toc a:hover,.toc a.on{background:var(--acc);transform:scale(1.4)}
 @media(max-width:700px){.toc{display:none}}
 
-.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px}
 
 /* ── HERO ── */
 header.hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;
@@ -58,17 +55,16 @@ header.hero{min-height:88vh;display:flex;flex-direction:column;justify-content:c
 .hero .sub{font-size:clamp(15px,2.2vw,20px);color:var(--mut);max-width:680px;line-height:1.6}
 .hero .hint{font-family:var(--mono);font-size:13px;color:var(--acc);margin-top:1.6em}
 .statrow{display:flex;flex-wrap:wrap;gap:12px;margin-top:2em}
-.statbox{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:14px 20px;min-width:130px}
+.statbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 20px;min-width:130px}
 .statbox .num{font-size:28px;font-weight:800;color:var(--acc)}
 .statbox .lbl{font-size:12px;color:var(--mut);margin-top:3px}
 
-/* ── sections ── */
+/* ── SECTIONS ── */
 section{padding:72px 0;border-top:1px solid var(--line)}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:3px;
   color:var(--acc2);text-transform:uppercase;margin-bottom:6px}
 h2{font-size:clamp(24px,4vw,40px);margin:.15em 0 .5em}
-h3{font-size:19px;color:var(--acc);margin:1.8em 0 .6em}
+h3{font-size:19px;color:var(--acc);margin:2em 0 .6em}
 p.lead{color:var(--mut);max-width:780px;margin-bottom:.5em}
 
 /* reveal */
@@ -77,59 +73,103 @@ p.lead{color:var(--mut);max-width:780px;margin-bottom:.5em}
 .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}
 .reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
 
-/* ── DATA SOURCES ── */
-.datasrc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:14px;margin-top:26px}
+/* ── DATA SOURCE CARDS ── */
+.datasrc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:26px}
 .src{background:var(--card);border:1px solid var(--line);border-radius:18px;
-  padding:22px;transition:transform .3s,border-color .3s,box-shadow .3s;position:relative;overflow:hidden}
-.src::before{content:'';position:absolute;inset:0;opacity:0;
-  background:radial-gradient(circle at 20% 30%,currentColor 0%,transparent 65%);
-  transition:opacity .4s}
+  padding:22px;transition:transform .3s,border-color .3s,box-shadow .3s}
 .src:hover{transform:translateY(-5px);border-color:var(--acc);
   box-shadow:0 14px 40px -18px rgba(255,179,71,.35)}
 .src .icon{font-size:36px;margin-bottom:12px;display:block}
 .src .name{font-size:16px;font-weight:700;margin-bottom:6px}
 .src .what{font-size:13px;color:var(--mut);line-height:1.55}
-.src .tag{display:inline-block;font-size:10.5px;font-family:var(--mono);
+.src .stag{display:inline-block;font-size:10.5px;font-family:var(--mono);
   padding:3px 9px;border-radius:6px;margin-top:12px;letter-spacing:.5px}
-.tag.sat{background:#1a2c1a;color:var(--ok)}
-.tag.atm{background:#1a2333;color:var(--cool)}
-.tag.ocean{background:#2c2218;color:var(--acc)}
+.stag.sat{background:#1a2c1a;color:var(--ok)}
+.stag.atm{background:#1a2333;color:var(--cool)}
+.stag.ocean{background:#2c2218;color:var(--acc)}
 
-/* ── ANALOGY FLOW ── */
+/* ── MJO SECTION ── */
+.mjo-section{margin-top:48px;background:linear-gradient(135deg,#0e1928,#0b1220);
+  border:1px solid var(--line);border-radius:22px;padding:32px}
+.mjo-section h3{margin-top:0;margin-bottom:6px;font-size:20px;color:var(--acc)}
+.mjo-section .mjo-sub{font-size:13.5px;color:var(--mut);margin-bottom:24px;max-width:600px}
+.mjo-layout{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+@media(max-width:800px){.mjo-layout{grid-template-columns:1fr}}
+.wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+#mjoWheel{width:100%;max-width:440px;cursor:pointer;overflow:visible}
+.wheel-hint{font-size:12px;color:var(--mut);text-align:center;font-family:var(--mono)}
+
+/* longitude bar */
+.lonbar-wrap{width:100%;max-width:440px}
+.lonbar-label{font-size:10.5px;color:var(--mut);display:flex;
+  justify-content:space-between;margin-bottom:5px;font-family:var(--mono)}
+.lonbar{height:13px;border-radius:7px;position:relative;
+  background:linear-gradient(90deg,#1aaa4a 0%,#1aaa4a 25%,#c8a020 45%,
+    #e04010 58%,#c83010 72%,#b86030 85%,#4a7a9a 100%);
+  border:1px solid var(--line)}
+.lonbar-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid #000;transform:translate(-50%,-50%);
+  transition:left .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(255,255,255,.6)}
+.lonbar-phases{display:flex;margin-top:4px}
+.lonbar-phase{flex:1;text-align:center;font-size:9px;color:var(--mut);font-family:var(--mono)}
+
+/* detail panel */
+.detail-panel{position:sticky;top:20px}
+#detailCard{background:var(--card2);border:1px solid var(--line);border-radius:18px;
+  padding:24px;min-height:400px;transition:border-color .3s}
+.dc-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--acc2);margin-bottom:7px}
+.dc-title{font-size:18px;font-weight:800;margin-bottom:14px;line-height:1.3}
+.dc-risk{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;
+  border-radius:999px;font-size:12.5px;font-weight:700;margin-bottom:16px;border:1px solid}
+.dc-section{margin-bottom:14px}
+.dc-section-label{font-size:10px;font-family:var(--mono);letter-spacing:1.5px;
+  color:var(--acc);text-transform:uppercase;margin-bottom:4px}
+.dc-text{font-size:13.5px;color:var(--mut);line-height:1.65}
+.dc-effect{font-size:13px;color:var(--ink);line-height:1.6;
+  padding:9px 12px;background:#ffffff06;border-radius:9px;border:1px solid var(--line)}
+.dc-note{font-size:12px;color:var(--mut);border-left:3px solid var(--acc2);
+  padding:7px 12px;margin-top:12px;background:#ffffff04;border-radius:0 8px 8px 0}
+.dc-placeholder{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;height:100%;min-height:360px;text-align:center;gap:14px;color:var(--mut)}
+.dc-placeholder .big{font-size:52px;opacity:.3}
+.dc-placeholder p{font-size:13.5px;line-height:1.6;max-width:240px}
+.risk-low{background:#0e1f14;border-color:#2c5a3a;color:var(--ok)}
+.risk-normal{background:#0e1726;border-color:#2c4a6a;color:var(--cool)}
+.risk-elevated{background:#1f1805;border-color:#4a3510;color:var(--acc)}
+.risk-high{background:#1f0e0a;border-color:#6a2010;color:var(--hot)}
+
+/* ── CALLOUT ── */
+.callout{background:var(--card2);border:1px solid var(--line);border-radius:16px;
+  padding:20px 24px;margin:24px 0;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.callout .num{font-size:44px;font-weight:900;color:var(--acc);line-height:1;white-space:nowrap}
+.callout .txt{font-size:13.5px;color:var(--mut);line-height:1.6}
+.note{font-size:13px;color:var(--mut);border-left:3px solid var(--acc2);
+  padding:10px 16px;margin-top:18px;background:#ffffff04;border-radius:0 10px 10px 0}
+.note b{color:var(--ink)}
+
+/* ── TRAIN STEPS ── */
 .aflow{display:flex;flex-direction:column;gap:0;margin-top:28px}
-.astep{display:grid;grid-template-columns:48px 1fr;gap:18px;padding:18px 0;
-  position:relative}
+.astep{display:grid;grid-template-columns:48px 1fr;gap:18px;padding:18px 0}
 .astep:not(:last-child){border-bottom:1px solid var(--line)}
-.astep .ico{width:48px;height:48px;border-radius:50%;display:flex;
-  align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
-  border:1px solid var(--line);background:var(--card2)}
-.astep .body .en{font-size:12px;font-family:var(--mono);color:var(--acc2);
-  letter-spacing:1px;margin-bottom:4px}
+.astep .ico{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:22px;flex-shrink:0;border:1px solid var(--line);background:var(--card2)}
+.astep .body .en{font-size:12px;font-family:var(--mono);color:var(--acc2);letter-spacing:1px;margin-bottom:4px}
 .astep .body strong{font-size:15px;font-weight:700;display:block;margin-bottom:5px}
 .astep .body p{font-size:13.5px;color:var(--mut);line-height:1.6}
-.astep .body .highlight{color:var(--ink);font-weight:600}
+.highlight{color:var(--ink);font-weight:600}
 
-/* ── NUMBER CALLOUT ── */
-.callout{background:var(--card2);border:1px solid var(--line);border-radius:16px;
-  padding:20px 24px;margin:20px 0;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.callout .num{font-size:48px;font-weight:900;color:var(--acc);line-height:1;white-space:nowrap}
-.callout .txt{font-size:14px;color:var(--mut);line-height:1.6}
-
-/* ── RESULT BARS (BSS) ── */
-.result-title{font-size:13px;color:var(--mut);margin:20px 0 10px}
+/* ── RESULTS ── */
 .bss-rows{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .bss-row{display:flex;align-items:center;gap:12px}
-.bss-label{font-size:13px;min-width:100px;color:var(--mut)}
-.bss-track{flex:1;height:22px;background:var(--card);border-radius:6px;overflow:hidden;
-  border:1px solid var(--line)}
+.bss-label{font-size:13px;min-width:110px;color:var(--mut)}
+.bss-track{flex:1;height:22px;background:var(--card);border-radius:6px;
+  overflow:hidden;border:1px solid var(--line)}
 .bss-fill{height:100%;border-radius:6px;transition:width 1.4s cubic-bezier(.2,.8,.2,1);
-  display:flex;align-items:center;padding-left:10px;font-size:11.5px;font-family:var(--mono);
-  color:#fff;white-space:nowrap;width:0}
+  display:flex;align-items:center;padding-left:10px;font-size:11.5px;
+  font-family:var(--mono);color:#fff;white-space:nowrap;width:0}
 .bss-fill.good{background:linear-gradient(90deg,#1d6a3a,var(--ok))}
 .bss-fill.base{background:linear-gradient(90deg,#2a3a1a,#8ac060)}
-
-/* ── RISK RAMP ── */
 .ramp{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
 .ramp .tier{flex:1;min-width:130px;border-radius:12px;padding:16px;
   border:1px solid var(--line);text-align:center}
@@ -141,7 +181,7 @@ p.lead{color:var(--mut);max-width:780px;margin-bottom:.5em}
 .t2{background:linear-gradient(135deg,#3a2e14,#1a1505)}
 .t3{background:linear-gradient(135deg,#3a1717,#1a0505)}
 
-/* ── JOURNEY STEPS ── */
+/* ── JOURNEY ── */
 .journey{display:flex;flex-wrap:wrap;gap:0;margin-top:28px;align-items:stretch}
 .jstep{flex:1 1 160px;background:var(--card);border:1px solid var(--line);
   border-radius:14px;padding:18px;transition:transform .3s,border-color .3s;min-width:160px}
@@ -155,12 +195,8 @@ p.lead{color:var(--mut);max-width:780px;margin-bottom:.5em}
 .jarrow svg{width:20px;height:20px}
 .flow{stroke-dasharray:6 6;animation:dash 1s linear infinite}
 @keyframes dash{to{stroke-dashoffset:-12}}
-@media(max-width:700px){.journey{flex-direction:column}.jarrow{width:auto;height:28px;transform:rotate(90deg)}}
-
-/* ── NOTE ── */
-.note{font-size:13px;color:var(--mut);border-left:3px solid var(--acc2);
-  padding:10px 16px;margin-top:18px;background:#ffffff04;border-radius:0 10px 10px 0}
-.note b{color:var(--ink)}
+@media(max-width:700px){.journey{flex-direction:column}
+  .jarrow{width:auto;height:28px;transform:rotate(90deg)}}
 
 footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
   border-top:1px solid var(--line);line-height:1.8}
@@ -168,21 +204,21 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
 </head>
 <body>
 <div class="heatbar" id="heatbar"></div>
-
 <nav>
   <span class="brand">HeatMAP · How We Built It</span>
   <a href="#data">ข้อมูล</a>
+  <a href="#mjo">MJO Wheel</a>
   <a href="#train">การฝึก AI</a>
   <a href="#result">ผลลัพธ์</a>
   <a href="#output">ปลายทาง</a>
 </nav>
-
 <nav class="toc" id="toc">
-  <a href="#top" title="ภาพรวม"></a>
-  <a href="#data" title="ข้อมูล"></a>
-  <a href="#train" title="การฝึก"></a>
-  <a href="#result" title="ผลลัพธ์"></a>
-  <a href="#output" title="ปลายทาง"></a>
+  <a href="#top"></a>
+  <a href="#data"></a>
+  <a href="#mjo"></a>
+  <a href="#train"></a>
+  <a href="#result"></a>
+  <a href="#output"></a>
 </nav>
 
 <!-- ═══════ HERO ═══════ -->
@@ -203,65 +239,84 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
   </div>
 </header>
 
-<!-- ═══════ 01 DATA ═══════ -->
+<!-- ═══════ 01 DATA SOURCES ═══════ -->
 <section id="data"><div class="wrap">
   <div class="eyebrow reveal">01 — ข้อมูลที่ใช้ฝึก AI</div>
   <h2 class="reveal d1">AI เรียนจากสัญญาณ 4 ประเภทนี้</h2>
   <p class="lead reveal d2">คลื่นความร้อนไม่ได้เกิดจากอากาศร้อนวันเดียว — มันเกิดจาก "สัญญาณหลายชั้น"
-    ที่สะสมก่อนหน้าหลายสัปดาห์ ไม่ว่าจะเป็นความชื้นในดิน รูปแบบลมมหาสมุทร และ ENSO
-    เราจึงดึงข้อมูลจาก 4 แหล่งนี้:</p>
+    ที่สะสมก่อนหน้าหลายสัปดาห์ เราจึงดึงข้อมูลจาก 4 แหล่งนี้:</p>
 
   <div class="datasrc">
-
     <div class="src reveal">
       <span class="icon">🛰️</span>
       <div class="name">ERA5 Reanalysis</div>
-      <div class="what">ข้อมูลอุตุนิยมวิทยาย้อนหลัง 30 ปี (1994–2023) จาก
-        <b>Copernicus / ECMWF</b> ของสหภาพยุโรป ซึ่งรวมข้อมูลจากดาวเทียม
-        บอลลูน และสถานีวัดทั่วโลกเข้าด้วยกัน<br/><br/>
-        สิ่งที่เอามา: <b>อุณหภูมิสูงสุดรายวัน (Tmax)</b> และ <b>ความชื้นในดิน 2 ชั้น</b>
-        (ชั้นบน 0–7 ซม. และชั้นลึก 28–100 ซม.) ทุก 0.25 องศา (~28 กม.)</div>
-      <span class="tag sat">ดาวเทียม · สถานีวัด</span>
+      <div class="what">ข้อมูลอุตุนิยมวิทยาย้อนหลัง 30 ปี (1994–2023) จาก <b>Copernicus / ECMWF</b>
+        ของสหภาพยุโรป รวมข้อมูลจากดาวเทียม บอลลูน และสถานีวัดทั่วโลก<br/><br/>
+        สิ่งที่เอามา: <b>อุณหภูมิสูงสุดรายวัน (Tmax)</b> และ <b>ความชื้นในดิน 2 ชั้น</b></div>
+      <span class="stag sat">ดาวเทียม · สถานีวัด</span>
     </div>
-
     <div class="src reveal d1">
       <span class="icon">🌀</span>
       <div class="name">MJO — Madden-Julian Oscillation</div>
-      <div class="what">"คลื่นฝน-ร้อน" ที่เดินทางรอบโลกจากตะวันตกไปตะวันออกทุก 30–60 วัน
-        มีอิทธิพลต่อฝนและอุณหภูมิในเอเชียตะวันออกเฉียงใต้อย่างมีนัยสำคัญ<br/><br/>
-        ดัชนี MJO บอก "ตอนนี้คลื่นนี้อยู่ที่เฟสไหน" — เราใช้เป็นสัญญาณ
-        ว่าช่วง 2–4 สัปดาห์ข้างหน้าจะมีความร้อนสะสมหรือไม่</div>
-      <span class="tag atm">บรรยากาศ · ลมมรสุม</span>
+      <div class="what">"คลื่นพายุฝน" ที่เดินทางรอบโลกทุก 30–60 วัน แบ่งออกเป็น 8 เฟส
+        แต่ละเฟสมีผลต่อโอกาสเกิดคลื่นความร้อนในไทยแตกต่างกันมาก<br/><br/>
+        <b style="color:var(--acc)">→ ดูวงล้อ MJO แบบ interactive ด้านล่าง</b></div>
+      <span class="stag atm">บรรยากาศ · ลมมรสุม</span>
     </div>
-
     <div class="src reveal d2">
       <span class="icon">💧</span>
       <div class="name">Soil Moisture (ความชื้นดิน)</div>
       <div class="what">ดินที่แห้งสะสมความร้อนได้มากกว่าดินชื้น เพราะไม่มีน้ำระเหยออกมาระบายความร้อน
-        ทำให้บริเวณที่ดินแล้งมาหลายสัปดาห์มีโอกาสเกิดคลื่นความร้อนสูงขึ้น<br/><br/>
-        ดึงมาจาก <b>ERA5</b> เช่นกัน ทั้งค่ารายสัปดาห์ รายเดือน และแนวโน้ม
-        — ดินชื้นดิน 30 วันมีอิทธิพลสูงสุดในโมเดลของเรา</div>
-      <span class="tag sat">ข้อมูลดิน · ระบายความร้อน</span>
+        บริเวณที่ดินแล้งมาหลายสัปดาห์มีโอกาสเกิดคลื่นความร้อนสูงขึ้น<br/><br/>
+        ค่ารายสัปดาห์ รายเดือน และแนวโน้ม — <b>ความชื้นดิน 30 วันมีอิทธิพลสูงสุดในโมเดล</b></div>
+      <span class="stag sat">ข้อมูลดิน · ERA5</span>
     </div>
-
     <div class="src reveal d3">
       <span class="icon">🌊</span>
       <div class="name">Niño3.4 — El Niño / La Niña</div>
-      <div class="what">อุณหภูมิผิวน้ำทะเลในมหาสมุทรแปซิฟิกกลาง ถ้าสูงกว่าปกติ (El Niño)
-        มักทำให้ไทยแห้งและร้อนกว่าปกติ ถ้าต่ำกว่า (La Niña) มักมีฝนมากกว่า<br/><br/>
-        เราใช้ค่า <b>ย้อนหลัง 1 เดือน</b> เพราะ ENSO ส่งผลกระทบต่อสภาพอากาศ
-        ไทยด้วยความล่าช้าหลายสัปดาห์</div>
-      <span class="tag ocean">มหาสมุทร · ENSO</span>
+      <div class="what">อุณหภูมิผิวน้ำทะเลในมหาสมุทรแปซิฟิกกลาง El Niño มักทำให้ไทยแห้งและร้อน
+        La Niña มักมีฝนมากกว่า<br/><br/>
+        เราใช้ค่า <b>ย้อนหลัง 1 เดือน</b> เพราะ ENSO ส่งผลต่อไทยด้วยความล่าช้าหลายสัปดาห์</div>
+      <span class="stag ocean">มหาสมุทร · ENSO</span>
     </div>
-
   </div>
 
-  <div class="callout reveal d2">
+  <!-- ── MJO INTERACTIVE WHEEL ── -->
+  <div class="mjo-section reveal d2" id="mjo">
+    <h3>🌀 MJO แต่ละเฟสมีผลต่อไทยต่างกันยังไง?</h3>
+    <p class="mjo-sub">MJO แบ่งออกเป็น 8 เฟส ตามตำแหน่งของศูนย์กลางพายุฝนบนโลก —
+      เมื่อศูนย์กลางอยู่ใกล้ไทย (เฟส 3–4) ฝนมากและเย็น, เมื่ออยู่ไกล (เฟส 6–7) ฝนน้อยและร้อนจัด
+      <b style="color:var(--acc)">คลิกที่แต่ละเฟสในวงล้อเพื่อดูรายละเอียด</b></p>
+    <div class="mjo-layout">
+      <div class="wheel-wrap">
+        <svg id="mjoWheel" viewBox="-170 -170 340 340" aria-label="MJO Phase Wheel"></svg>
+        <p class="wheel-hint">คลิกที่แต่ละส่วนเพื่อดูรายละเอียด</p>
+        <div class="lonbar-wrap">
+          <div class="lonbar-label">
+            <span>ฝนอยู่ใกล้ไทย — เสี่ยงต่ำ</span>
+            <span>ฝนอยู่ไกลไทย — เสี่ยงสูง</span>
+          </div>
+          <div class="lonbar" id="lonbar"><div class="lonbar-dot" id="lonDot" style="left:50%"></div></div>
+          <div class="lonbar-phases" id="lonbarPhases"></div>
+        </div>
+      </div>
+      <div class="detail-panel">
+        <div id="detailCard">
+          <div class="dc-placeholder">
+            <span class="big">🌀</span>
+            <p>คลิกที่เฟสใดก็ได้บนวงล้อ เพื่อดูว่า MJO เฟสนั้นมีผลต่อไทยอย่างไร และเสี่ยงคลื่นความร้อนมากน้อยแค่ไหน</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout reveal d3">
     <div class="num">CDS</div>
-    <div class="txt"><b style="color:var(--ink)">ทุกข้อมูลดาวน์โหลดจาก Copernicus Climate Data Store (CDS)</b> บริการของสหภาพยุโรปที่เปิดให้ฟรีสำหรับนักวิจัย
+    <div class="txt"><b style="color:var(--ink)">ทุกข้อมูลดาวน์โหลดจาก Copernicus Climate Data Store (CDS)</b>
+      บริการของสหภาพยุโรปที่เปิดให้ฟรีสำหรับนักวิจัย
       ข้อมูลมีทั้งหมด 30 ปี (1994–2023) และจะอัปเดตรายสัปดาห์เพื่อรันพยากรณ์ใหม่</div>
   </div>
-
   <div class="note reveal d3">
     <b>ข้อมูลที่เราเลือก = เฉพาะข้อมูลก่อนวันออกพยากรณ์เท่านั้น</b> — เราระวังไม่ให้ AI เห็น "คำตอบล่วงหน้า"
     เช่น ไม่ใช้อุณหภูมิของสัปดาห์ที่จะทำนาย เพราะในความเป็นจริงข้อมูลนั้นยังไม่มีขณะออกพยากรณ์
@@ -273,7 +328,7 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
   <div class="eyebrow reveal">02 — วิธีที่เราฝึก AI</div>
   <h2 class="reveal d1">AI เรียนรู้ "สัญญาณเตือน" จาก 30 ปีของประวัติศาสตร์</h2>
   <p class="lead reveal d2">ไม่ใช่ AI ที่เข้าใจฟิสิกส์หรืออุตุนิยมวิทยา — แต่เป็น AI ที่จำรูปแบบ:
-    "ทุกครั้งที่มีสัญญาณแบบนี้ สัปดาห์ที่ 2-3 ข้างหน้ามักเกิดคลื่นความร้อน"</p>
+    "ทุกครั้งที่มีสัญญาณแบบนี้ สัปดาห์ที่ 2–4 ข้างหน้ามักเกิดคลื่นความร้อน"</p>
 
   <div class="aflow">
     <div class="astep reveal">
@@ -281,10 +336,9 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
       <div class="body">
         <div class="en">STEP 1 — LABEL</div>
         <strong>นิยาม "สัปดาห์คลื่นความร้อน"</strong>
-        <p>เราตั้งนิยามว่า สัปดาห์ใดสัปดาห์หนึ่งถือว่าเป็นคลื่นความร้อนก็ต่อเมื่อ
-          <span class="highlight">อุณหภูมิเกินเปอร์เซ็นไทล์ที่ 90 ติดต่อกัน 3 วัน</span>ขึ้นไป
-          ในช่วง 7 วันนั้น — "เปอร์เซ็นไทล์ 90" คือ "ร้อนกว่า 90% ของวันในช่วงเดียวกันของปีตลอด 30 ปี"
-          ไม่ใช่แค่ร้อน แต่ "ร้อนผิดปกติ"</p>
+        <p>สัปดาห์ใดถือว่าเป็นคลื่นความร้อนก็ต่อเมื่อ
+          <span class="highlight">อุณหภูมิเกินเปอร์เซ็นไทล์ที่ 90 ติดต่อกัน 3 วัน</span>ขึ้นไปใน 7 วันนั้น —
+          "เปอร์เซ็นไทล์ 90" คือ "ร้อนกว่า 90% ของวันในช่วงเดียวกันของปีตลอด 30 ปี" ไม่ใช่แค่ร้อน แต่ "ร้อนผิดปกติ"</p>
       </div>
     </div>
     <div class="astep reveal d1">
@@ -292,9 +346,9 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
       <div class="body">
         <div class="en">STEP 2 — FEATURES</div>
         <strong>สร้างตาราง "สัญญาณก่อนเกิดเหตุ"</strong>
-        <p>สำหรับทุกสัปดาห์ในประวัติศาสตร์ เราบันทึกว่า <span class="highlight">ก่อนหน้าสัปดาห์นั้น
-          7–30 วัน มีสัญญาณอะไรบ้าง</span> — ดินแห้งแค่ไหน, MJO อยู่เฟสไหน, ENSO เป็นยังไง,
-          อุณหภูมิย้อนหลังสูงกว่าปกติไหม ได้ตารางขนาดราว 828,000 แถว (77 จังหวัด × หลายพันสัปดาห์)</p>
+        <p>สำหรับทุกสัปดาห์ในประวัติศาสตร์ เราบันทึกว่า <span class="highlight">ก่อนหน้าสัปดาห์นั้น 7–30 วัน
+          มีสัญญาณอะไรบ้าง</span> — ดินแห้งแค่ไหน, MJO อยู่เฟสไหน, ENSO เป็นยังไง
+          ได้ตารางขนาดราว 828,000 แถว (77 จังหวัด × หลายพันสัปดาห์)</p>
       </div>
     </div>
     <div class="astep reveal d2">
@@ -312,9 +366,9 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
       <div class="body">
         <div class="en">STEP 4 — CALIBRATE</div>
         <strong>ปรับให้ตัวเลขตรงกับความเป็นจริง</strong>
-        <p>AI ในขั้นต้นมักบอก "70% เสี่ยง" แต่เกิดจริงแค่ 40% — เรียกว่า overconfident
-          เราจึง <span class="highlight">ปรับโดยเทียบกับข้อมูลจริง</span> (Platt Calibration)
-          จนเมื่อ AI บอก "60%" มันเกิดขึ้นจริงราว 60% ของครั้ง ตัวเลขจึงเชื่อถือได้</p>
+        <p>AI ในขั้นต้นมักบอก "70% เสี่ยง" แต่เกิดจริงแค่ 40% เราจึง
+          <span class="highlight">ปรับโดยเทียบกับข้อมูลจริง</span> (Platt Calibration)
+          จนเมื่อ AI บอก "60%" มันเกิดขึ้นจริงราว 60% ของครั้ง</p>
       </div>
     </div>
     <div class="astep reveal">
@@ -322,34 +376,32 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
       <div class="body">
         <div class="en">STEP 5 — TEST</div>
         <strong>ทดสอบบนข้อมูลที่ AI ไม่เคยเห็น</strong>
-        <p>เราแบ่งข้อมูล 30 ปีออก — ให้ AI ฝึกจากปีก่อนหน้า แล้วทดสอบบนปีถัดไป
-          <span class="highlight">ห้ามใช้ข้อมูลอนาคตในการฝึก</span> เพราะในชีวิตจริงเราไม่มีข้อมูลอนาคต
-          เกณฑ์ผ่าน: ต้องแม่นกว่า 2 วิธีง่ายๆ คือ "ทายว่าปกติทุกครั้ง" และ "ทายตามเมื่อวาน"</p>
+        <p>เราแบ่งข้อมูล 30 ปีออก ให้ AI ฝึกจากปีก่อนหน้า แล้วทดสอบบนปีถัดไป
+          <span class="highlight">ห้ามใช้ข้อมูลอนาคตในการฝึก</span>
+          เกณฑ์ผ่าน: แม่นกว่า "ทายว่าปกติทุกครั้ง" และ "ทายตามเมื่อวาน"</p>
       </div>
     </div>
   </div>
-
   <div class="note reveal d2">
-    <b>ทำไมถึงไม่ใช้ AI ขนาดใหญ่แบบ ChatGPT?</b> — เพราะข้อมูลอุตุนิยมวิทยาเป็นตาราง ไม่ใช่ภาษา
-    โมเดลคลาสสิกบนตารางข้อมูลทำงานได้ดีกว่า ตีความได้ง่ายกว่า และเห็นว่า "ตัวแปรไหนสำคัญแค่ไหน"
-    ชัดเจนกว่า Deep Learning กล่องดำมาก
+    <b>ทำไมถึงไม่ใช้ AI ขนาดใหญ่?</b> — เพราะข้อมูลอุตุนิยมวิทยาเป็นตาราง ไม่ใช่ภาษา
+    โมเดลคลาสสิกบนตารางทำงานได้ดีกว่า ตีความได้ง่ายกว่า และเห็นว่า "ตัวแปรไหนสำคัญแค่ไหน" ชัดเจนกว่า Deep Learning กล่องดำมาก
   </div>
 </div></section>
 
-<!-- ═══════ 03 RESULT ═══════ -->
+<!-- ═══════ 03 RESULTS ═══════ -->
 <section id="result"><div class="wrap">
   <div class="eyebrow reveal">03 — ผลลัพธ์และความแม่นยำ</div>
   <h2 class="reveal d1">AI ของเราแม่นกว่า "ทายว่าปกติ" ได้ยังไง</h2>
   <p class="lead reveal d2">ตัววัดที่เราใช้เรียกว่า <b>BSS (Brier Skill Score)</b> — พูดง่ายๆ คือ
-    "แม่นกว่าวิธีง่ายที่สุดได้กี่เปอร์เซ็นต์" ถ้าเป็นบวกแปลว่าดีกว่า baseline ถ้าติดลบแปลว่าแย่กว่า</p>
+    "แม่นกว่าวิธีง่ายที่สุดได้กี่เปอร์เซ็นต์" ถ้าเป็นบวกแปลว่าดีกว่า baseline</p>
 
   <div class="callout reveal d2">
     <div class="num">+16.8%</div>
     <div class="txt">ความแม่นยำสูงกว่า baseline ในการพยากรณ์ <b style="color:var(--ink)">ล่วงหน้า 2 สัปดาห์</b>
-      — ตัวเลขนี้หมายความว่า AI ของเราทำนายได้ "ผิดน้อยกว่า" วิธีทายปกติอย่างมีนัยสำคัญทางสถิติ</div>
+      — AI ของเราทำนายได้ "ผิดน้อยกว่า" วิธีทายปกติอย่างมีนัยสำคัญ</div>
   </div>
 
-  <div class="result-title reveal">เปรียบเทียบทุก lead (สัปดาห์ที่ทำนาย) vs. baseline "ทายว่าปกติตามฤดู"</div>
+  <p style="font-size:13px;color:var(--mut);margin:20px 0 10px" class="reveal">เปรียบเทียบทุก lead vs. baseline "ทายว่าปกติตามฤดู"</p>
   <div class="bss-rows" id="bssrows">
     <div class="bss-row reveal">
       <div class="bss-label">Lead 2 สัปดาห์</div>
@@ -368,158 +420,344 @@ footer{padding:52px 0;color:var(--mut);font-size:12.5px;text-align:center;
       <div class="bss-track"><div class="bss-fill base" data-w="38" style="width:0">Baseline: +9.5%</div></div>
     </div>
   </div>
-  <p style="font-size:12.5px;color:var(--mut);margin-top:12px" class="reveal d3">
-    แอปแสดง lead 2–4 สัปดาห์ ซึ่งเป็นช่วงที่โมเดลแม่นที่สุดและเป็นประโยชน์ที่สุดสำหรับการตัดสินใจ</p>
 
   <h3 class="reveal">ความเสี่ยง 4 ระดับ — ไม่ใช่ใช่/ไม่ใช่</h3>
   <p class="lead reveal d1">แทนที่จะบอกแค่ "จะเกิด/ไม่เกิด" เราบอกว่า
-    <b>"เสี่ยงกว่าปกติกี่เท่า"</b> เพราะแต่ละจังหวัดมีฤดูกาลต่างกัน
-    ภาคเหนือ "ร้อนผิดปกติ" กับภาคใต้คนละเกณฑ์กัน</p>
+    <b>"เสี่ยงกว่าปกติกี่เท่า"</b> เพราะแต่ละจังหวัดมีฤดูกาลต่างกัน</p>
   <div class="ramp reveal d2">
-    <div class="tier t0">
-      <span class="emoji">🟦</span>
-      <span class="label">ต่ำ (Low)</span>
-      <span class="desc">ความเสี่ยงต่ำกว่าปกติของจังหวัดนี้ในช่วงนี้</span>
-    </div>
-    <div class="tier t1">
-      <span class="emoji">🟢</span>
-      <span class="label">ปกติ (Normal)</span>
-      <span class="desc">เสี่ยงใกล้เคียงค่าปกติ ไม่มีสัญญาณผิดปกติ</span>
-    </div>
-    <div class="tier t2">
-      <span class="emoji">🟡</span>
-      <span class="label">สูง (Elevated)</span>
-      <span class="desc">เสี่ยงสูงกว่าปกติ 1.5–2.5 เท่า ควรเฝ้าระวัง</span>
-    </div>
-    <div class="tier t3">
-      <span class="emoji">🔴</span>
-      <span class="label">สูงมาก (High)</span>
-      <span class="desc">เสี่ยงสูงกว่าปกติ 2.5 เท่าขึ้นไป ต้องระวังสูง</span>
-    </div>
-  </div>
-  <div class="note reveal d3">
-    <b>ตัวอย่างจริง:</b> กรุงเทพฯ ในช่วงนั้น โอกาสเกิดคลื่นความร้อน 38.6%
-    ขณะที่ค่าปกติของกรุงเทพฯ คือ 11.4% → เสี่ยงกว่าปกติ 3.4 เท่า → ระดับ <b>สูงมาก (High)</b>
+    <div class="tier t0"><span class="emoji">🟦</span><span class="label">ต่ำ (Low)</span><span class="desc">ต่ำกว่าค่าปกติของจังหวัดนี้</span></div>
+    <div class="tier t1"><span class="emoji">🟢</span><span class="label">ปกติ (Normal)</span><span class="desc">ใกล้เคียงค่าปกติ</span></div>
+    <div class="tier t2"><span class="emoji">🟡</span><span class="label">สูง (Elevated)</span><span class="desc">เสี่ยงสูงกว่าปกติ 1.5–2.5 เท่า</span></div>
+    <div class="tier t3"><span class="emoji">🔴</span><span class="label">สูงมาก (High)</span><span class="desc">เสี่ยงสูงกว่าปกติ 2.5 เท่าขึ้นไป</span></div>
   </div>
 </div></section>
 
-<!-- ═══════ 04 OUTPUT ═══════ -->
+<!-- ═══════ 04 JOURNEY ═══════ -->
 <section id="output"><div class="wrap">
   <div class="eyebrow reveal">04 — จาก AI สู่มือถือ</div>
   <h2 class="reveal d1">พยากรณ์เดินทางยังไงถึงคุณ</h2>
-  <p class="lead reveal d2">ระบบออกแบบให้ไม่มี server ที่ต้องดูแลตลอด 24 ชั่วโมง —
-    ทำงานอัตโนมัติทุกสัปดาห์ และถ้าการรันล้มเหลว ผู้ใช้ยังเห็นข้อมูลรอบก่อน</p>
+  <p class="lead reveal d2">ระบบออกแบบให้ไม่มี server ที่ต้องดูแลตลอด 24 ชั่วโมง
+    ทำงานอัตโนมัติทุกสัปดาห์</p>
 
   <div class="journey">
-    <div class="jstep reveal">
-      <div class="jnum">จันทร์ 09:00 น.</div>
-      <span class="jico">☁️</span>
+    <div class="jstep reveal"><div class="jnum">จันทร์ 09:00 น.</div><span class="jico">☁️</span>
       <div class="jtitle">ดาวน์โหลดข้อมูลใหม่</div>
-      <div class="jdesc">ระบบดึงข้อมูลอากาศล่าสุดจาก CDS อัตโนมัติ โดยไม่ต้องมีคนกดปุ่ม</div>
-    </div>
+      <div class="jdesc">ดึงข้อมูลอากาศล่าสุดจาก CDS อัตโนมัติ</div></div>
     <div class="jarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path class="flow" d="M3 12h16"/><path d="M14 7l6 5-6 5"/></svg></div>
-    <div class="jstep reveal d1">
-      <div class="jnum">อัตโนมัติ</div>
-      <span class="jico">🧠</span>
+    <div class="jstep reveal d1"><div class="jnum">อัตโนมัติ</div><span class="jico">🧠</span>
       <div class="jtitle">AI ทำนาย 77 จังหวัด</div>
-      <div class="jdesc">โหลดโมเดลที่ฝึกไว้แล้ว → คำนวณความน่าจะเป็นและระดับความเสี่ยง</div>
-    </div>
+      <div class="jdesc">โหลดโมเดลที่ฝึกไว้ → คำนวณความเสี่ยง</div></div>
     <div class="jarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path class="flow" d="M3 12h16"/><path d="M14 7l6 5-6 5"/></svg></div>
-    <div class="jstep reveal d2">
-      <div class="jnum">Gate ตรวจสอบ</div>
-      <span class="jico">🔒</span>
+    <div class="jstep reveal d2"><div class="jnum">Gate ตรวจสอบ</div><span class="jico">🔒</span>
       <div class="jtitle">ตรวจก่อนเผยแพร่</div>
-      <div class="jdesc">ระบบตรวจว่าผลลัพธ์ครบ 77 จังหวัด ค่าอยู่ในช่วงที่ถูกต้อง ถ้าผิด → หยุดทันที</div>
-    </div>
+      <div class="jdesc">ครบ 77 จังหวัด ค่าถูกต้อง ถ้าผิด → หยุดทันที</div></div>
     <div class="jarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path class="flow" d="M3 12h16"/><path d="M14 7l6 5-6 5"/></svg></div>
-    <div class="jstep reveal d3">
-      <div class="jnum">เผยแพร่</div>
-      <span class="jico">📡</span>
+    <div class="jstep reveal d3"><div class="jnum">เผยแพร่</div><span class="jico">📡</span>
       <div class="jtitle">อัปโหลดไฟล์ JSON</div>
-      <div class="jdesc">บันทึกข้อมูลพยากรณ์เป็นไฟล์ JSON เดียว แล้วอัปโหลดขึ้นอินเทอร์เน็ต</div>
-    </div>
+      <div class="jdesc">บันทึกพยากรณ์เป็นไฟล์เดียว อัปโหลดขึ้นอินเทอร์เน็ต</div></div>
     <div class="jarrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path class="flow" d="M3 12h16"/><path d="M14 7l6 5-6 5"/></svg></div>
-    <div class="jstep reveal">
-      <div class="jnum">คุณ</div>
-      <span class="jico">📱</span>
+    <div class="jstep reveal"><div class="jnum">คุณ</div><span class="jico">📱</span>
       <div class="jtitle">แอปดึงข้อมูลมาแสดง</div>
-      <div class="jdesc">HeatMAP อ่านไฟล์ JSON → แสดงบนแผนที่ + ให้คำแนะนำสุขภาพ 77 จังหวัด</div>
-    </div>
+      <div class="jdesc">HeatMAP อ่านไฟล์ → แสดงบนแผนที่ + คำแนะนำ 77 จังหวัด</div></div>
   </div>
 
   <div class="note reveal d2">
-    <b>ไม่มี server ที่ต้องรันตลอดเวลา</b> — ระบบทำงานเหมือนหนังสือพิมพ์: พิมพ์ทุกสัปดาห์
-    แล้ววางไว้ให้อ่าน แทนที่จะเป็นโทรทัศน์สดที่ต้องออกอากาศตลอด ทำให้ต้นทุนต่ำและเสถียรกว่ามาก
-    <br/><br/>
-    <b>ถ้าการรันสัปดาห์นั้นล้มเหลว</b> (เช่น CDS ล่ม) ผู้ใช้ยังเห็นพยากรณ์รอบก่อน
-    พร้อมป้ายแจ้งว่า "ข้อมูลนี้เก่ากว่า 7 วัน" โปร่งใสต่อผู้ใช้
+    <b>ไม่มี server ที่ต้องรันตลอดเวลา</b> — ระบบทำงานเหมือนหนังสือพิมพ์: พิมพ์ทุกสัปดาห์แล้ววางไว้ให้อ่าน
+    ทำให้ต้นทุนต่ำและเสถียรกว่ามาก ถ้าการรันสัปดาห์นั้นล้มเหลว ผู้ใช้ยังเห็นพยากรณ์รอบก่อนพร้อมป้ายแจ้ง
   </div>
 </div></section>
 
-<footer>
-  <div class="wrap">
-    HeatMAP · สร้างโดยทีม DeepSeek_Heatwave<br/>
-    ข้อมูล ERA5 จาก Copernicus Climate Data Store · อัตโนมัติทุกสัปดาห์<br/>
-    <span style="opacity:.5;font-size:11px">how-we-built.html · เขียนสำหรับทุกคนในทีม ไม่ว่าจะมีพื้นฐาน tech หรือไม่</span>
-  </div>
-</footer>
+<footer><div class="wrap">
+  HeatMAP · สร้างโดยทีม DeepSeek_Heatwave<br/>
+  ข้อมูล ERA5 + MJO จาก Copernicus Climate Data Store · อัตโนมัติทุกสัปดาห์<br/>
+  <span style="opacity:.5;font-size:11px">how-we-built.html · เขียนสำหรับทุกคนในทีม</span>
+</div></footer>
 
 <script>
-// Floating heat dots
-const dots = document.getElementById('dots');
-for (let i = 0; i < 30; i++) {
-  const s = document.createElement('span');
-  s.style.left = Math.random() * 100 + '%';
-  s.style.bottom = '-10px';
-  s.style.animationDuration = (7 + Math.random() * 10) + 's';
-  s.style.animationDelay = (-Math.random() * 14) + 's';
-  s.style.opacity = 0.2 + Math.random() * 0.45;
-  s.style.background = Math.random() > 0.5 ? 'var(--hot)' : 'var(--acc)';
-  dots.appendChild(s);
+// ─── MJO PHASES DATA ─────────────────────────────────────────────────────────
+const PHASES = [
+  { num:1, locShort:"อินเดียตะวันตก", locEn:"Western Indian Ocean", lonPct:88,
+    risk:"normal", riskLabel:"ปกติ", segColor:"#4a7a9a",
+    title:"เฟส 1 — มหาสมุทรอินเดียตะวันตก",
+    body:"ศูนย์กลางพายุฝนอยู่ในมหาสมุทรอินเดียทางตะวันตกสุด ไทยเพิ่งเริ่มออกจากช่วงฝน เมฆลดลง อุณหภูมิเริ่มสูงขึ้นเล็กน้อย แต่ยังไม่อยู่ในโซนระงับเต็มตัว",
+    effect:"ฟ้าเปิดขึ้น · อุ่นกว่าปกติเล็กน้อย · ฝนลดลงเล็กน้อย",
+    note:"MJO เฟส 1 amplitude สูง → ลดโอกาสฝนและเพิ่มอุณหภูมิเฉลี่ย ~0.5–1°C" },
+  { num:2, locShort:"อินเดียกลาง", locEn:"Central Indian Ocean", lonPct:72,
+    risk:"low", riskLabel:"ต่ำ", segColor:"#2a8a6a",
+    title:"เฟส 2 — มหาสมุทรอินเดียกลาง",
+    body:"ศูนย์กลางพายุฝนเคลื่อนมาอยู่กลางมหาสมุทรอินเดีย ความชื้นจากอ่าวเบงกอลเริ่มเคลื่อนเข้าสู่ไทย โอกาสฝนสูงขึ้นโดยเฉพาะภาคตะวันตก อุณหภูมิปกติถึงเย็นกว่าปกติ",
+    effect:"ฝนเพิ่มขึ้นโดยเฉพาะภาคตะวันตก · เย็นกว่าปกติ",
+    note:"ความชื้นจากอ่าวเบงกอลเข้าสู่ไทย — ลดความเสี่ยงคลื่นความร้อนชัดเจน" },
+  { num:3, locShort:"อินเดียตะวันออก / สุมาตรา", locEn:"Eastern Indian Ocean", lonPct:52,
+    risk:"low", riskLabel:"ต่ำมาก", segColor:"#1aaa4a",
+    title:"เฟส 3 — มหาสมุทรอินเดียตะวันออก / เกาะสุมาตรา",
+    body:"ศูนย์กลางพายุฝนอยู่บริเวณเกาะสุมาตราและมหาสมุทรอินเดียตะวันออก ใกล้ไทยมากขึ้น ฝนเพิ่มสูงขึ้นทั่วประเทศ ความชื้นสูง อุณหภูมิเย็นกว่าปกติชัดเจน",
+    effect:"ฝนหนักโดยเฉพาะภาคใต้ · เย็นชื้นทั่วประเทศ · แสงแดดน้อยลง",
+    note:"เฟส 3 amplitude สูง → ลดความเสี่ยงคลื่นความร้อนได้มากที่สุดนอกจากเฟส 4" },
+  { num:4, locShort:"หมู่เกาะมาริไทม์", locEn:"Maritime Continent (Indonesia)", lonPct:20,
+    risk:"low", riskLabel:"ต่ำมาก", segColor:"#0aba40",
+    title:"เฟส 4 — หมู่เกาะมาริไทม์ (อินโดนีเซีย)",
+    body:"ศูนย์กลางพายุฝนอยู่เหนือหมู่เกาะอินโดนีเซียและบริเวณใกล้ไทยมากที่สุด ฝนตกหนักทั่วประเทศ เมฆมากจนแสงแดดน้อย อุณหภูมิต่ำกว่าปกติ เป็นเฟสที่ความเสี่ยงคลื่นความร้อนต่ำที่สุดในวงรอบ MJO",
+    effect:"🌧️ ฝนหนักทั่วประเทศ · เย็นที่สุดในรอบ MJO · ความเสี่ยงต่ำสุด",
+    note:"จุดต่ำสุดของความเสี่ยง — ศูนย์กลางพายุฝนอยู่ใกล้ไทยที่สุด" },
+  { num:5, locShort:"แปซิฟิกตะวันตก", locEn:"Western Pacific", lonPct:35,
+    risk:"elevated", riskLabel:"เพิ่มขึ้น", segColor:"#c8a020",
+    title:"เฟส 5 — มหาสมุทรแปซิฟิกตะวันตก",
+    body:"ศูนย์กลางพายุฝนเคลื่อนออกไปทางตะวันออก ผ่านฟิลิปปินส์และทะเลจีนใต้ ไทยเริ่มเข้าสู่โซนระงับการพาความร้อน ฝนลดลง ฟ้าเริ่มโปร่ง อุณหภูมิสูงขึ้นชัดเจน",
+    effect:"⚠️ ฝนลดลง · อุ่นขึ้นชัดเจน · ระวังช่วงกลางวัน",
+    note:"จุดเปลี่ยน — ไทยเริ่มเข้าสู่โซน suppressed อย่างชัดเจน" },
+  { num:6, locShort:"แปซิฟิกกลาง", locEn:"Central Pacific", lonPct:15,
+    risk:"high", riskLabel:"สูงมาก", segColor:"#e04010",
+    title:"เฟส 6 — มหาสมุทรแปซิฟิกกลาง",
+    body:"ศูนย์กลางพายุฝนอยู่ไกลออกไปในมหาสมุทรแปซิฟิก ไทยอยู่ในโซนระงับเต็มตัว ฝนน้อยมาก ท้องฟ้าโปร่งใส แสงแดดจัดตลอดวัน ไม่มีเมฆบังความร้อน ความเสี่ยงคลื่นความร้อนสูงมาก",
+    effect:"🔴 แห้งและร้อนจัด · แสงแดดจัดตลอดวัน · ความเสี่ยงสูงมาก",
+    note:"เฟส 6 + 7 = ช่วงอันตรายที่สุดของวงรอบ MJO สำหรับประเทศไทย" },
+  { num:7, locShort:"แปซิฟิกตะวันออก", locEn:"Eastern Pacific", lonPct:5,
+    risk:"high", riskLabel:"สูงมาก", segColor:"#c83010",
+    title:"เฟส 7 — มหาสมุทรแปซิฟิกตะวันออก",
+    body:"ศูนย์กลางพายุฝนอยู่ในมหาสมุทรแปซิฟิกตะวันออก ไทยยังอยู่ในโซนระงับอย่างต่อเนื่อง สภาวะแห้งร้อนจัดต่อเนื่องมาจากเฟส 6 อุณหภูมิสูงสุดในรอบ MJO สำหรับไทย",
+    effect:"🔴 ร้อนสูงสุดในรอบ MJO · แห้งจัด · ความเสี่ยงสูงมาก",
+    note:"ร่วมกับเฟส 6 = ช่วงที่ควรแจ้งเตือนประชาชนมากที่สุด" },
+  { num:8, locShort:"ซีกโลกตะวันตก", locEn:"Western Hemisphere", lonPct:50,
+    risk:"elevated", riskLabel:"สูงกว่าปกติ", segColor:"#b86030",
+    title:"เฟส 8 — ซีกโลกตะวันตก / มหาสมุทรแอตแลนติก",
+    body:"ศูนย์กลางพายุฝนอยู่ที่ซีกโลกตะวันตก ไทยเริ่มออกจากโซนระงับ ความชื้นเริ่มกลับมาเล็กน้อย แต่ยังอุ่นกว่าปกติ กำลังเข้าสู่วงรอบใหม่",
+    effect:"⚠️ ยังร้อนกว่าปกติ · ความชื้นเริ่มกลับมาเล็กน้อย",
+    note:"เฟสเปลี่ยนผ่าน — ความเสี่ยงลดลงจากจุดสูงสุด กำลังเข้าสู่รอบใหม่" },
+];
+
+const RISK_STYLE = {
+  low:      { cls:"risk-low",      dot:"#5fe3a1" },
+  normal:   { cls:"risk-normal",   dot:"#5ec8ff" },
+  elevated: { cls:"risk-elevated", dot:"#ffb347" },
+  high:     { cls:"risk-high",     dot:"#ff5d5d" },
+};
+
+// ─── SVG WHEEL ───────────────────────────────────────────────────────────────
+const NS = "http://www.w3.org/2000/svg";
+const IR = 58, OR = 145, LR = 106, GAP = 2;
+let sel = null;
+
+function polar(deg, r) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return [+(r * Math.cos(rad)).toFixed(2), +(r * Math.sin(rad)).toFixed(2)];
 }
 
-// Scroll progress
-const hb = document.getElementById('heatbar');
+function arc(a1, a2, r1, r2) {
+  const [x1,y1] = polar(a1, r2), [x2,y2] = polar(a2, r2);
+  const [x3,y3] = polar(a2, r1), [x4,y4] = polar(a1, r1);
+  const lg = (a2-a1)>180?1:0;
+  return `M${x1},${y1} A${r2},${r2},0,${lg},1,${x2},${y2} L${x3},${y3} A${r1},${r1},0,${lg},0,${x4},${y4}Z`;
+}
+
+function buildWheel() {
+  const svg = document.getElementById('mjoWheel');
+  if (!svg) return;
+
+  const defs = document.createElementNS(NS,'defs');
+  defs.innerHTML = `<marker id="mjoArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6Z" fill="#ffb347" opacity="0.5"/></marker>`;
+  svg.appendChild(defs);
+
+  PHASES.forEach((p, i) => {
+    const a1 = i*45 + GAP/2, a2 = (i+1)*45 - GAP/2, am = i*45 + 22.5;
+    const path = document.createElementNS(NS,'path');
+    path.setAttribute('d', arc(a1, a2, IR, OR));
+    path.setAttribute('fill', p.segColor);
+    path.setAttribute('opacity','0.82');
+    path.setAttribute('stroke','#0b1220');
+    path.setAttribute('stroke-width','1.5');
+    path.setAttribute('class', `mseg mseg-${p.num}`);
+    path.style.cursor = 'pointer';
+    path.style.transition = 'opacity .2s';
+    svg.appendChild(path);
+
+    const [lx,ly] = polar(am, LR);
+    const num = document.createElementNS(NS,'text');
+    num.setAttribute('x', lx); num.setAttribute('y', ly - 9);
+    num.setAttribute('text-anchor','middle'); num.setAttribute('dominant-baseline','middle');
+    num.setAttribute('fill','#fff'); num.setAttribute('font-size','18');
+    num.setAttribute('font-weight','800');
+    num.setAttribute('font-family','Segoe UI,system-ui,sans-serif');
+    num.setAttribute('pointer-events','none');
+    num.textContent = p.num;
+    svg.appendChild(num);
+
+    const loc = document.createElementNS(NS,'text');
+    loc.setAttribute('x', lx); loc.setAttribute('y', ly + 10);
+    loc.setAttribute('text-anchor','middle'); loc.setAttribute('dominant-baseline','middle');
+    loc.setAttribute('fill','rgba(255,255,255,0.6)'); loc.setAttribute('font-size','8');
+    loc.setAttribute('font-family','Segoe UI,system-ui,sans-serif');
+    loc.setAttribute('pointer-events','none');
+    loc.setAttribute('transform', `rotate(${am},${lx},${ly})`);
+    loc.textContent = p.locShort.split('/')[0].trim();
+    svg.appendChild(loc);
+
+    path.addEventListener('click', () => selectPhase(p.num));
+    path.addEventListener('mouseenter', () => { if(sel!==p.num) path.setAttribute('opacity','1'); });
+    path.addEventListener('mouseleave', () => { if(sel!==p.num) path.setAttribute('opacity','0.82'); });
+  });
+
+  // inner circle
+  const bg = document.createElementNS(NS,'circle');
+  bg.setAttribute('r', IR-2); bg.setAttribute('fill','#0f1a2e');
+  bg.setAttribute('stroke','#23344f'); bg.setAttribute('stroke-width','1');
+  svg.appendChild(bg);
+
+  const ct = document.createElementNS(NS,'text');
+  ct.setAttribute('text-anchor','middle'); ct.setAttribute('dominant-baseline','middle');
+  ct.setAttribute('fill','#ffb347'); ct.setAttribute('font-size','13');
+  ct.setAttribute('font-weight','700');
+  ct.setAttribute('font-family','Segoe UI,system-ui,sans-serif'); ct.setAttribute('y','-7');
+  ct.textContent = 'ไทย'; svg.appendChild(ct);
+
+  const cs = document.createElementNS(NS,'text');
+  cs.setAttribute('text-anchor','middle'); cs.setAttribute('dominant-baseline','middle');
+  cs.setAttribute('fill','#90a2c0'); cs.setAttribute('font-size','9');
+  cs.setAttribute('font-family','Segoe UI,system-ui,sans-serif'); cs.setAttribute('y','8');
+  cs.textContent = 'คลิกเฟส'; svg.appendChild(cs);
+
+  // direction arc
+  const aR = OR+18;
+  const [ax1,ay1] = polar(15, aR), [ax2,ay2] = polar(65, aR);
+  const aarc = document.createElementNS(NS,'path');
+  aarc.setAttribute('d',`M${ax1[0]},${ax1[1]} A${aR},${aR},0,0,1,${ay1[0]},${ay1[1]}`);
+  // fix: re-do the arc with correct coords
+  aarc.setAttribute('d',`M${ax1},${ay1} A${aR},${aR},0,0,1,${ax2},${ay2}`);
+  aarc.setAttribute('fill','none'); aarc.setAttribute('stroke','#ffb347');
+  aarc.setAttribute('stroke-width','1.5'); aarc.setAttribute('stroke-dasharray','4 3');
+  aarc.setAttribute('marker-end','url(#mjoArrow)'); aarc.setAttribute('opacity','0.45');
+  svg.appendChild(aarc);
+}
+
+function buildLonBar() {
+  const c = document.getElementById('lonbarPhases');
+  if (!c) return;
+  PHASES.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'lonbar-phase'; el.textContent = p.num; c.appendChild(el);
+  });
+}
+
+function updateLonDot(num) {
+  const p = PHASES.find(x => x.num === num);
+  const dot = document.getElementById('lonDot');
+  if (!p || !dot) return;
+  dot.style.left = (100 - p.lonPct) + '%';
+}
+
+function selectPhase(num) {
+  if (sel !== null) {
+    const old = document.querySelector(`.mseg-${sel}`);
+    if (old) { old.setAttribute('opacity','0.82'); old.setAttribute('stroke-width','1.5'); }
+  }
+  sel = num;
+  const p = PHASES.find(x => x.num === num);
+  const rs = RISK_STYLE[p.risk];
+  const seg = document.querySelector(`.mseg-${num}`);
+  if (seg) { seg.setAttribute('opacity','1'); seg.setAttribute('stroke-width','3'); }
+  updateLonDot(num);
+
+  const card = document.getElementById('detailCard');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="dc-eyebrow">PHASE ${num} / 8</div>
+    <div class="dc-title">${p.title}</div>
+    <span class="dc-risk ${rs.cls}">
+      <span style="width:8px;height:8px;border-radius:50%;background:${rs.dot};display:inline-block"></span>
+      ความเสี่ยงคลื่นความร้อน: ${p.riskLabel}
+    </span>
+    <div class="dc-section">
+      <div class="dc-section-label">ศูนย์กลางพายุฝนอยู่ที่</div>
+      <div class="dc-text">${p.locShort} (${p.locEn})</div>
+    </div>
+    <div class="dc-section">
+      <div class="dc-section-label">ผลต่อประเทศไทย</div>
+      <div class="dc-text">${p.body}</div>
+    </div>
+    <div class="dc-section">
+      <div class="dc-section-label">สรุปสั้น</div>
+      <div class="dc-effect">${p.effect}</div>
+    </div>
+    <div class="dc-note">${p.note}</div>
+    <div style="display:flex;gap:6px;margin-top:18px;flex-wrap:wrap">
+      ${PHASES.map(x=>`<div onclick="selectPhase(${x.num})" style="
+        width:26px;height:26px;border-radius:50%;background:${x.segColor};
+        opacity:${x.num===num?'1':'0.4'};display:flex;align-items:center;
+        justify-content:center;font-size:11px;font-weight:800;color:#fff;cursor:pointer;
+        border:${x.num===num?'2px solid #fff':'1px solid transparent'};
+        transition:all .2s;flex-shrink:0">${x.num}</div>`).join('')}
+    </div>`;
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+buildWheel();
+buildLonBar();
+setTimeout(() => { if (!sel) selectPhase(4); }, 800);
+
+// scroll progress
 addEventListener('scroll', () => {
   const h = document.documentElement;
-  hb.style.transform = 'scaleX(' + (h.scrollTop / (h.scrollHeight - h.clientHeight)) + ')';
-}, { passive: true });
+  document.getElementById('heatbar').style.transform =
+    'scaleX(' + h.scrollTop / (h.scrollHeight - h.clientHeight) + ')';
+}, { passive:true });
 
-// Reveal on scroll
+// reveal
 const io = new IntersectionObserver(es => {
-  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
-}, { threshold: 0.12 });
+  es.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold:0.1 });
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-// BSS bars animate
+// BSS bars
 const bssrows = document.getElementById('bssrows');
 let bssPlayed = false;
-const bio = new IntersectionObserver(es => {
-  es.forEach(e => {
-    if (e.isIntersecting && !bssPlayed) {
-      bssPlayed = true;
-      document.querySelectorAll('.bss-fill').forEach((el, i) => {
-        setTimeout(() => {
-          el.style.width = el.dataset.w + '%';
-        }, i * 200);
-      });
-    }
-  });
-}, { threshold: 0.3 });
-bio.observe(bssrows);
+if (bssrows) {
+  new IntersectionObserver(es => {
+    es.forEach(e => {
+      if(e.isIntersecting && !bssPlayed) {
+        bssPlayed = true;
+        document.querySelectorAll('.bss-fill').forEach((el,i) => {
+          setTimeout(() => { el.style.width = el.dataset.w + '%'; }, i*200);
+        });
+      }
+    });
+  }, { threshold:0.3 }).observe(bssrows);
+}
 
-// TOC active dot
-const secs = [...document.querySelectorAll('section, header')];
+// TOC
+const secs = [...document.querySelectorAll('section,header')];
 const links = [...document.querySelectorAll('#toc a')];
-const tio = new IntersectionObserver(es => {
+new IntersectionObserver(es => {
   es.forEach(e => {
-    if (e.isIntersecting) {
+    if(e.isIntersecting){
       const id = e.target.id;
-      links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id));
+      links.forEach(a => a.classList.toggle('on', a.getAttribute('href')==='#'+id));
     }
   });
-}, { threshold: 0.45 });
-secs.forEach(s => tio.observe(s));
+}, { threshold:0.4 }).observe(secs[0]);
+secs.forEach(s => {
+  new IntersectionObserver(es => {
+    es.forEach(e => {
+      if(e.isIntersecting){
+        links.forEach(a => a.classList.toggle('on', a.getAttribute('href')==='#'+e.target.id));
+      }
+    });
+  }, { threshold:0.4 }).observe(s);
+});
+
+// heat dots
+const dotsEl = document.getElementById('dots');
+if (dotsEl) {
+  for(let i=0;i<28;i++){
+    const s=document.createElement('span');
+    s.style.left=Math.random()*100+'%'; s.style.bottom='-10px';
+    s.style.animationDuration=(7+Math.random()*10)+'s';
+    s.style.animationDelay=(-Math.random()*14)+'s';
+    s.style.opacity=0.2+Math.random()*.45;
+    s.style.background=Math.random()>.5?'var(--hot)':'var(--acc)';
+    dotsEl.appendChild(s);
+  }
+}
 </script>
 </body>
 </html>

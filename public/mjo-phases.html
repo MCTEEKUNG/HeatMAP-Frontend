@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MJO · ผลกระทบต่อประเทศไทย</title>
+<style>
+:root{
+  --bg:#0b1220;--card:#13203a;--card2:#162645;--line:#23344f;
+  --ink:#e8eefb;--mut:#90a2c0;--acc:#ffb347;--acc2:#ff7a59;
+  --cool:#5ec8ff;--hot:#ff5d5d;--ok:#5fe3a1;
+  --sans:"Segoe UI",system-ui,-apple-system,"Noto Sans Thai",sans-serif;
+  --mono:"SF Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(1200px 700px at 60% -10%,#16294a,var(--bg) 55%);
+  color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased;
+  min-height:100vh}
+
+/* progress bar */
+.heatbar{position:fixed;inset:0 0 auto 0;height:4px;z-index:100;
+  background:linear-gradient(90deg,var(--cool),var(--acc),var(--hot));
+  transform-origin:0;transform:scaleX(0);transition:transform .1s linear}
+
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+
+/* ── HERO ── */
+header{padding:56px 0 32px;text-align:center}
+.hero-tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:3px;
+  color:var(--acc);border:1px solid var(--line);border-radius:999px;
+  padding:6px 18px;margin-bottom:18px}
+header h1{font-size:clamp(28px,5vw,54px);line-height:1.1;
+  background:linear-gradient(120deg,#fff 20%,var(--acc) 60%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:.4em}
+header p.sub{color:var(--mut);font-size:clamp(14px,2vw,17px);max-width:640px;margin:0 auto}
+
+/* ── MAIN LAYOUT ── */
+.main-layout{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;
+  padding:40px 0 60px}
+@media(max-width:820px){.main-layout{grid-template-columns:1fr}}
+
+/* ── WHEEL ── */
+.wheel-wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+#mjoWheel{width:100%;max-width:460px;cursor:pointer;overflow:visible}
+.wheel-hint{font-size:12.5px;color:var(--mut);text-align:center;
+  font-family:var(--mono);letter-spacing:.5px}
+
+/* ── LONGITUDE BAR ── */
+.lonbar-wrap{width:100%;max-width:460px;margin-top:4px}
+.lonbar-label{font-size:11px;color:var(--mut);display:flex;
+  justify-content:space-between;margin-bottom:5px;font-family:var(--mono)}
+.lonbar{height:14px;border-radius:7px;position:relative;
+  background:linear-gradient(90deg,
+    #1aaa4a 0%,#1aaa4a 25%,   /* phases near Thailand - green */
+    #c8a020 40%,               /* transition - amber */
+    #e04010 55%,#c83010 70%,   /* far phases - red */
+    #b86030 85%,#4a7a9a 100%); /* returning - back to normal */
+  border:1px solid var(--line)}
+.lonbar-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid #000;transform:translate(-50%,-50%);
+  transition:left .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(255,255,255,.6)}
+.lonbar-phases{display:flex;margin-top:4px}
+.lonbar-phase{flex:1;text-align:center;font-size:9px;color:var(--mut);
+  font-family:var(--mono)}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{position:sticky;top:20px}
+#detailCard{background:var(--card);border:1px solid var(--line);border-radius:20px;
+  padding:28px;min-height:440px;transition:border-color .3s}
+.dc-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--acc2);margin-bottom:8px}
+.dc-title{font-size:20px;font-weight:800;margin-bottom:16px;line-height:1.3}
+.dc-risk{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;
+  border-radius:999px;font-size:13px;font-weight:700;margin-bottom:18px;border:1px solid}
+.dc-section{margin-bottom:16px}
+.dc-section-label{font-size:11px;font-family:var(--mono);letter-spacing:1.5px;
+  color:var(--acc);text-transform:uppercase;margin-bottom:5px}
+.dc-text{font-size:14px;color:var(--mut);line-height:1.65}
+.dc-effect{font-size:13.5px;color:var(--ink);line-height:1.6;
+  padding:10px 14px;background:#ffffff06;border-radius:10px;border:1px solid var(--line)}
+.dc-note{font-size:12.5px;color:var(--mut);border-left:3px solid var(--acc2);
+  padding:8px 12px;margin-top:14px;background:#ffffff04;border-radius:0 8px 8px 0}
+.dc-placeholder{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;height:100%;min-height:380px;text-align:center;gap:16px;color:var(--mut)}
+.dc-placeholder .big{font-size:56px;opacity:.3}
+.dc-placeholder p{font-size:14px;line-height:1.6;max-width:260px}
+
+/* risk level chip colors */
+.risk-low{background:#0e1f14;border-color:#2c5a3a;color:var(--ok)}
+.risk-normal{background:#0e1726;border-color:#2c4a6a;color:var(--cool)}
+.risk-elevated{background:#1f1805;border-color:#4a3510;color:var(--acc)}
+.risk-high{background:#1f0e0a;border-color:#6a2010;color:var(--hot)}
+
+/* ── RISK RAMP ── */
+.ramp-row{display:flex;gap:6px;margin:20px 0 8px;flex-wrap:wrap}
+.ramp-chip{flex:1;min-width:80px;border-radius:8px;padding:8px 10px;
+  font-size:12px;text-align:center;border:1px solid var(--line);transition:transform .2s}
+.ramp-chip:hover{transform:translateY(-2px)}
+.ramp-chip .rl{font-weight:700;display:block;margin-bottom:2px}
+.ramp-chip .rn{font-size:10.5px;color:var(--mut)}
+
+/* ── EXPLAINER SECTION ── */
+.explainer{padding:60px 0;border-top:1px solid var(--line)}
+.explainer h2{font-size:clamp(22px,3.5vw,36px);margin:.2em 0 .5em}
+.explainer p.lead{color:var(--mut);max-width:740px;margin-bottom:1em;font-size:15px}
+.fact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;margin-top:24px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.fact .ico{font-size:30px;display:block;margin-bottom:10px}
+.fact h4{font-size:15px;margin-bottom:6px;color:var(--acc)}
+.fact p{font-size:13px;color:var(--mut);line-height:1.55}
+
+footer{padding:48px 0;color:var(--mut);font-size:12.5px;text-align:center;
+  border-top:1px solid var(--line);line-height:1.8}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}
+.reveal.d3{transition-delay:.24s}
+</style>
+</head>
+<body>
+<div class="heatbar" id="heatbar"></div>
+
+<!-- HERO -->
+<header>
+  <div class="wrap">
+    <span class="hero-tag reveal">MJO · MADDEN-JULIAN OSCILLATION</span>
+    <h1 class="reveal d1">คลื่น MJO กับ<br/>คลื่นความร้อนไทย</h1>
+    <p class="sub reveal d2">พายุฝนขนาดใหญ่ที่เดินทางรอบโลกทุก 30–60 วัน
+      แต่ละเฟสที่ผ่านมีผลต่อโอกาสเกิดคลื่นความร้อนในไทยแตกต่างกันอย่างมีนัยสำคัญ
+      <br/>— คลิกที่เฟสเพื่อดูรายละเอียด</p>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+<div class="wrap">
+<div class="main-layout">
+
+  <!-- LEFT: Wheel + lonbar -->
+  <div class="wheel-wrap reveal">
+    <svg id="mjoWheel" viewBox="-170 -170 340 340" aria-label="MJO Phase Wheel"></svg>
+    <p class="wheel-hint">↑ คลิกแต่ละเฟสเพื่อดูรายละเอียด</p>
+    <div class="lonbar-wrap reveal d1">
+      <div class="lonbar-label">
+        <span>ใกล้ไทย (เสี่ยงต่ำ)</span>
+        <span>ไกลไทย (เสี่ยงสูง)</span>
+      </div>
+      <div class="lonbar" id="lonbar">
+        <div class="lonbar-dot" id="lonDot" style="left:50%"></div>
+      </div>
+      <div class="lonbar-phases" id="lonbarPhases"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Detail card -->
+  <div class="detail-panel">
+    <div id="detailCard" class="reveal d2">
+      <div class="dc-placeholder">
+        <span class="big">🌀</span>
+        <p>คลิกที่เฟสใดก็ได้บนวงล้อทางซ้าย เพื่อดูว่า MJO เฟสนั้นมีผลต่อประเทศไทยอย่างไร</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</main>
+
+<!-- RISK RAMP -->
+<section class="explainer">
+<div class="wrap">
+  <div class="eyebrow reveal" style="font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--acc2);text-transform:uppercase;margin-bottom:6px">ระดับความเสี่ยง</div>
+  <h2 class="reveal d1">MJO บอกอะไรเราได้</h2>
+  <p class="lead reveal d2">ตัวแบบ HeatMAP ใช้ MJO phase และ amplitude เป็น feature หนึ่งในการทำนาย
+    เมื่อรู้ว่า MJO อยู่เฟสไหน เราพอจะคาดได้ว่าในอีก 2–4 สัปดาห์ ไทยจะเสี่ยงคลื่นความร้อนมากน้อยแค่ไหน</p>
+  <div class="ramp-row reveal d2">
+    <div class="ramp-chip" style="background:#0e1f14;border-color:#2c5a3a">
+      <span class="rl" style="color:var(--ok)">ต่ำมาก</span>
+      <span class="rn">เฟส 3–4<br/>ฝนอยู่เหนือไทย</span>
+    </div>
+    <div class="ramp-chip" style="background:#0e1726;border-color:#2c4a6a">
+      <span class="rl" style="color:var(--cool)">ต่ำ–ปกติ</span>
+      <span class="rn">เฟส 2, 1<br/>เปลี่ยนผ่าน</span>
+    </div>
+    <div class="ramp-chip" style="background:#1f1805;border-color:#4a3510">
+      <span class="rl" style="color:var(--acc)">เพิ่มขึ้น</span>
+      <span class="rn">เฟส 5, 8<br/>เริ่มแห้ง</span>
+    </div>
+    <div class="ramp-chip" style="background:#1f0e0a;border-color:#6a2010">
+      <span class="rl" style="color:var(--hot)">สูงมาก</span>
+      <span class="rn">เฟส 6–7<br/>ไทยอยู่ในโซนร้อน</span>
+    </div>
+  </div>
+
+  <div class="fact-grid reveal d3">
+    <div class="fact">
+      <span class="ico">🔄</span>
+      <h4>MJO เดินทางตะวันตก → ตะวันออก</h4>
+      <p>ใช้เวลา 30–60 วันต่อรอบ วนจากมหาสมุทรอินเดียผ่านเอเชียตะวันออกเฉียงใต้
+        ข้ามแปซิฟิก กลับมาทางซีกโลกตะวันตก แล้วย้อนกลับมาใหม่</p>
+    </div>
+    <div class="fact">
+      <span class="ico">📡</span>
+      <h4>วัดได้ล่วงหน้า 2–4 สัปดาห์</h4>
+      <p>MJO เป็นสัญญาณที่นักอุตุนิยมวิทยาติดตามได้ล่วงหน้า ทำให้เป็น feature ที่มีคุณค่าสำหรับ
+        การพยากรณ์คลื่นความร้อนในช่วง sub-seasonal</p>
+    </div>
+    <div class="fact">
+      <span class="ico">💡</span>
+      <h4>ผลขึ้นอยู่กับ Amplitude</h4>
+      <p>ถ้า MJO อ่อน (amplitude &lt; 1) ผลต่อไทยน้อยมาก โมเดลจึงใช้ทั้ง phase
+        และ amplitude ร่วมกัน ไม่ใช่แค่เฟสเดียว</p>
+    </div>
+    <div class="fact">
+      <span class="ico">🌡️</span>
+      <h4>ขึ้นกับฤดูกาลด้วย</h4>
+      <p>ผลของ MJO ต่อคลื่นความร้อนชัดเจนที่สุดในช่วงหน้าร้อนไทย (มีนาคม–พฤษภาคม)
+        นอกฤดูนี้ผลอาจน้อยกว่า</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<footer>
+  <div class="wrap">
+    HeatMAP · MJO Phase Reference<br/>
+    ข้อมูล MJO จาก Bureau of Meteorology (BoM) · ใช้ใน HeatMAP forecast model<br/>
+    <span style="opacity:.5;font-size:11px">mjo-phases.html · สร้างสำหรับทีม HeatMAP</span>
+  </div>
+</footer>
+
+<script>
+// ─── PHASE DATA ───────────────────────────────────────────────────────────────
+const PHASES = [
+  {
+    num: 1,
+    locShort: "อินเดียตะวันตก",
+    locEn: "Western Indian Ocean",
+    lonPct: 88,   // approximate position on the longitude bar (0=near Thailand, 100=far)
+    risk: "normal",
+    riskLabel: "ปกติ",
+    riskLabelEn: "Normal",
+    segColor: "#4a7a9a",
+    title: "เฟส 1 — มหาสมุทรอินเดียตะวันตก",
+    body: "ศูนย์กลางพายุฝนอยู่ในมหาสมุทรอินเดียทางตะวันตกสุด ห่างจากไทยมากที่สุดฝั่งตรงข้าม ไทยเพิ่งเริ่มออกจากช่วงฝน เมฆลดลง อุณหภูมิเริ่มสูงขึ้นเล็กน้อย แต่ยังไม่อยู่ในโซนระงับเต็มตัว",
+    effect: "ฟ้าเปิดขึ้น · อุ่นกว่าปกติเล็กน้อย · ฝนลดลงเล็กน้อย",
+    note: "MJO เฟส 1 ที่ amplitude สูง → ลดโอกาสฝนและเพิ่มอุณหภูมิเฉลี่ย ~0.5–1°C",
+  },
+  {
+    num: 2,
+    locShort: "อินเดียกลาง",
+    locEn: "Central Indian Ocean",
+    lonPct: 72,
+    risk: "low",
+    riskLabel: "ต่ำ",
+    riskLabelEn: "Low",
+    segColor: "#2a8a6a",
+    title: "เฟส 2 — มหาสมุทรอินเดียกลาง",
+    body: "ศูนย์กลางพายุฝนเคลื่อนมาอยู่กลางมหาสมุทรอินเดีย ความชื้นจากอ่าวเบงกอลเริ่มเคลื่อนตัวเข้าสู่ไทยทางตะวันตก โอกาสฝนสูงขึ้น โดยเฉพาะภาคตะวันตกและภาคใต้ตอนบน อุณหภูมิปกติถึงเย็นกว่าปกติ",
+    effect: "ฝนเพิ่มขึ้นโดยเฉพาะภาคตะวันตก · เย็นกว่าปกติ",
+    note: "ความชื้นจากอ่าวเบงกอลเข้าสู่ไทย — ลดความเสี่ยงคลื่นความร้อนชัดเจน",
+  },
+  {
+    num: 3,
+    locShort: "อินเดียตะวันออก / สุมาตรา",
+    locEn: "Eastern Indian Ocean / Sumatra",
+    lonPct: 52,
+    risk: "low",
+    riskLabel: "ต่ำมาก",
+    riskLabelEn: "Very Low",
+    segColor: "#1aaa4a",
+    title: "เฟส 3 — มหาสมุทรอินเดียตะวันออก / เกาะสุมาตรา",
+    body: "ศูนย์กลางพายุฝนอยู่บริเวณเกาะสุมาตราและมหาสมุทรอินเดียตะวันออก ใกล้ไทยมากขึ้น ฝนเพิ่มสูงขึ้นทั่วประเทศ ความชื้นสูง อุณหภูมิเย็นกว่าปกติชัดเจน เมฆปกคลุม ลดรังสีแสงอาทิตย์",
+    effect: "ฝนหนักโดยเฉพาะภาคใต้ · เย็นชื้นทั่วประเทศ · แสงแดดน้อยลง",
+    note: "เฟส 3 ร่วมกับ amplitude สูง → ลดความเสี่ยงคลื่นความร้อนได้มากที่สุดนอกจากเฟส 4",
+  },
+  {
+    num: 4,
+    locShort: "หมู่เกาะมาริไทม์",
+    locEn: "Maritime Continent (Indonesia)",
+    lonPct: 20,
+    risk: "low",
+    riskLabel: "ต่ำมาก",
+    riskLabelEn: "Very Low",
+    segColor: "#0aba40",
+    title: "เฟส 4 — หมู่เกาะมาริไทม์ (อินโดนีเซีย)",
+    body: "ศูนย์กลางพายุฝนอยู่เหนือหมู่เกาะอินโดนีเซียและบริเวณใกล้ไทยมากที่สุด ฝนตกหนักทั่วประเทศ เมฆมากจนแสงแดดน้อย อุณหภูมิต่ำกว่าปกติ นี่คือเฟสที่ความเสี่ยงคลื่นความร้อนในไทยต่ำที่สุดในวงรอบ MJO ทั้งหมด",
+    effect: "🌧️ ฝนหนักทั่วประเทศ · เย็นที่สุดในรอบ MJO · แทบไม่มีความเสี่ยงคลื่นความร้อน",
+    note: "จุดต่ำสุดของความเสี่ยง — ศูนย์กลางพายุฝนอยู่ใกล้ไทยที่สุด",
+  },
+  {
+    num: 5,
+    locShort: "แปซิฟิกตะวันตก",
+    locEn: "Western Pacific",
+    lonPct: 35,
+    risk: "elevated",
+    riskLabel: "เพิ่มขึ้น",
+    riskLabelEn: "Elevated",
+    segColor: "#c8a020",
+    title: "เฟส 5 — มหาสมุทรแปซิฟิกตะวันตก",
+    body: "ศูนย์กลางพายุฝนเคลื่อนออกไปทางตะวันออก ผ่านฟิลิปปินส์และทะเลจีนใต้ ไทยเริ่มเข้าสู่โซนระงับการพาความร้อน ฝนลดลง ฟ้าเริ่มโปร่ง แสงแดดเพิ่มขึ้น อุณหภูมิสูงขึ้นชัดเจน ความเสี่ยงคลื่นความร้อนเริ่มเพิ่มขึ้น",
+    effect: "⚠️ ฝนลดลง · อุ่นขึ้นชัดเจน · ระวังช่วงกลางวัน",
+    note: "จุดเปลี่ยน — ไทยเริ่มเข้าสู่โซน suppressed อย่างชัดเจน",
+  },
+  {
+    num: 6,
+    locShort: "แปซิฟิกกลาง",
+    locEn: "Central Pacific",
+    lonPct: 15,
+    risk: "high",
+    riskLabel: "สูงมาก",
+    riskLabelEn: "Very High",
+    segColor: "#e04010",
+    title: "เฟส 6 — มหาสมุทรแปซิฟิกกลาง",
+    body: "ศูนย์กลางพายุฝนอยู่ไกลออกไปในมหาสมุทรแปซิฟิก ไทยอยู่ในโซนระงับเต็มตัว ฝนน้อยมาก ท้องฟ้าโปร่งใส แสงแดดจัดตลอดวัน ไม่มีเมฆบังความร้อน ความเสี่ยงคลื่นความร้อนสูงมาก โดยเฉพาะช่วงหน้าร้อน (มีนาคม–พฤษภาคม)",
+    effect: "🔴 แห้งและร้อนจัด · แสงแดดจัดตลอดวัน · ความเสี่ยงคลื่นความร้อนสูงมาก",
+    note: "เฟส 6 + 7 = ช่วงอันตรายที่สุดของวงรอบ MJO สำหรับประเทศไทย",
+  },
+  {
+    num: 7,
+    locShort: "แปซิฟิกตะวันออก",
+    locEn: "Eastern Pacific",
+    lonPct: 5,
+    risk: "high",
+    riskLabel: "สูงมาก",
+    riskLabelEn: "Very High",
+    segColor: "#c83010",
+    title: "เฟส 7 — มหาสมุทรแปซิฟิกตะวันออก",
+    body: "ศูนย์กลางพายุฝนอยู่ในมหาสมุทรแปซิฟิกตะวันออก ไทยยังอยู่ในโซนระงับอย่างต่อเนื่อง สภาวะแห้งร้อนจัดต่อเนื่องมาจากเฟส 6 อุณหภูมิสูงสุดในรอบ MJO สำหรับประเทศไทย ความเสี่ยงคลื่นความร้อนสูงมากอย่างต่อเนื่อง",
+    effect: "🔴 ร้อนสูงสุดในรอบ MJO · แห้งจัด · ความเสี่ยงคลื่นความร้อนสูงมาก",
+    note: "ร่วมกับเฟส 6 = ช่วงที่ควรแจ้งเตือนประชาชนมากที่สุด",
+  },
+  {
+    num: 8,
+    locShort: "ซีกโลกตะวันตก",
+    locEn: "Western Hemisphere / Atlantic",
+    lonPct: 50,
+    risk: "elevated",
+    riskLabel: "สูงกว่าปกติ",
+    riskLabelEn: "Above Normal",
+    segColor: "#b86030",
+    title: "เฟส 8 — ซีกโลกตะวันตก / มหาสมุทรแอตแลนติก",
+    body: "ศูนย์กลางพายุฝนอยู่ที่ซีกโลกตะวันตก ไทยเริ่มออกจากโซนระงับ ความชื้นเริ่มกลับมาเล็กน้อย แต่ยังอุ่นกว่าปกติ ความเสี่ยงคลื่นความร้อนยังสูงกว่าค่าปกติ กำลังเข้าสู่วงรอบใหม่",
+    effect: "⚠️ ยังร้อนกว่าปกติ · ความชื้นเริ่มกลับมาเล็กน้อย",
+    note: "เฟสเปลี่ยนผ่าน — ความเสี่ยงลดลงจากจุดสูงสุด กำลังเข้าสู่รอบใหม่",
+  },
+];
+
+const RISK_STYLE = {
+  low:      { cls: "risk-low",      dot: "#5fe3a1" },
+  normal:   { cls: "risk-normal",   dot: "#5ec8ff" },
+  elevated: { cls: "risk-elevated", dot: "#ffb347" },
+  high:     { cls: "risk-high",     dot: "#ff5d5d" },
+};
+
+// ─── SVG WHEEL ────────────────────────────────────────────────────────────────
+const SVG_NS = "http://www.w3.org/2000/svg";
+const INNER_R = 58, OUTER_R = 145, LABEL_R = 108, GAP_DEG = 2;
+let selectedPhase = null;
+
+function polar(deg, r) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return [r * Math.cos(rad), r * Math.sin(rad)];
+}
+
+function arcPath(a1, a2, r1, r2) {
+  const [x1, y1] = polar(a1, r2);
+  const [x2, y2] = polar(a2, r2);
+  const [x3, y3] = polar(a2, r1);
+  const [x4, y4] = polar(a1, r1);
+  const lg = (a2 - a1 > 180) ? 1 : 0;
+  const f = n => Math.round(n * 10) / 10;
+  return `M${f(x1)},${f(y1)} A${r2},${r2},0,${lg},1,${f(x2)},${f(y2)} L${f(x3)},${f(y3)} A${r1},${r1},0,${lg},0,${f(x4)},${f(y4)}Z`;
+}
+
+function buildWheel() {
+  const svg = document.getElementById('mjoWheel');
+  const segSize = 360 / 8;
+
+  PHASES.forEach((p, i) => {
+    const a1 = i * segSize + GAP_DEG / 2;
+    const a2 = (i + 1) * segSize - GAP_DEG / 2;
+    const aMid = (a1 + a2) / 2;
+
+    // Segment path
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', arcPath(a1, a2, INNER_R, OUTER_R));
+    path.setAttribute('fill', p.segColor);
+    path.setAttribute('opacity', '0.82');
+    path.setAttribute('stroke', '#0b1220');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('class', `seg seg-${p.num}`);
+    path.style.cursor = 'pointer';
+    path.style.transition = 'opacity .2s, transform .2s';
+    svg.appendChild(path);
+
+    // Phase number
+    const [lx, ly] = polar(aMid, LABEL_R);
+    const num = document.createElementNS(SVG_NS, 'text');
+    num.setAttribute('x', lx);
+    num.setAttribute('y', ly - 9);
+    num.setAttribute('text-anchor', 'middle');
+    num.setAttribute('dominant-baseline', 'middle');
+    num.setAttribute('fill', '#fff');
+    num.setAttribute('font-size', '18');
+    num.setAttribute('font-weight', '800');
+    num.setAttribute('font-family', 'Segoe UI,system-ui,sans-serif');
+    num.setAttribute('pointer-events', 'none');
+    num.textContent = p.num;
+    svg.appendChild(num);
+
+    // Short location label
+    const loc = document.createElementNS(SVG_NS, 'text');
+    loc.setAttribute('x', lx);
+    loc.setAttribute('y', ly + 10);
+    loc.setAttribute('text-anchor', 'middle');
+    loc.setAttribute('dominant-baseline', 'middle');
+    loc.setAttribute('fill', 'rgba(255,255,255,0.65)');
+    loc.setAttribute('font-size', '8.5');
+    loc.setAttribute('font-family', 'Segoe UI,system-ui,sans-serif');
+    loc.setAttribute('pointer-events', 'none');
+    // Rotate text to follow the arc
+    loc.setAttribute('transform', `rotate(${aMid},${lx},${ly})`);
+    loc.textContent = p.locShort;
+    svg.appendChild(loc);
+
+    // Click handler
+    path.addEventListener('click', () => selectPhase(p.num));
+    path.addEventListener('mouseenter', () => {
+      if (selectedPhase !== p.num) path.setAttribute('opacity', '1');
+    });
+    path.addEventListener('mouseleave', () => {
+      if (selectedPhase !== p.num) path.setAttribute('opacity', '0.82');
+    });
+  });
+
+  // Inner circle background
+  const innerBg = document.createElementNS(SVG_NS, 'circle');
+  innerBg.setAttribute('r', INNER_R - 2);
+  innerBg.setAttribute('fill', '#0f1a2e');
+  innerBg.setAttribute('stroke', '#23344f');
+  innerBg.setAttribute('stroke-width', '1');
+  svg.appendChild(innerBg);
+
+  // Center "ไทย" label
+  const cLabel = document.createElementNS(SVG_NS, 'text');
+  cLabel.setAttribute('text-anchor', 'middle');
+  cLabel.setAttribute('dominant-baseline', 'middle');
+  cLabel.setAttribute('fill', '#ffb347');
+  cLabel.setAttribute('font-size', '13');
+  cLabel.setAttribute('font-weight', '700');
+  cLabel.setAttribute('font-family', 'Segoe UI,system-ui,sans-serif');
+  cLabel.setAttribute('y', '-7');
+  cLabel.textContent = 'ไทย';
+  svg.appendChild(cLabel);
+
+  const cSub = document.createElementNS(SVG_NS, 'text');
+  cSub.setAttribute('text-anchor', 'middle');
+  cSub.setAttribute('dominant-baseline', 'middle');
+  cSub.setAttribute('fill', '#90a2c0');
+  cSub.setAttribute('font-size', '9');
+  cSub.setAttribute('font-family', 'Segoe UI,system-ui,sans-serif');
+  cSub.setAttribute('y', '8');
+  cSub.textContent = 'คลิกเฟส';
+  svg.appendChild(cSub);
+
+  // Direction arrow arc (showing MJO moves clockwise)
+  const arrowR = OUTER_R + 18;
+  const [ax1, ay1] = polar(20, arrowR);
+  const [ax2, ay2] = polar(70, arrowR);
+  const arrowArc = document.createElementNS(SVG_NS, 'path');
+  arrowArc.setAttribute('d', `M${ax1.toFixed(1)},${ay1.toFixed(1)} A${arrowR},${arrowR},0,0,1,${ax2.toFixed(1)},${ay2.toFixed(1)}`);
+  arrowArc.setAttribute('fill', 'none');
+  arrowArc.setAttribute('stroke', '#ffb347');
+  arrowArc.setAttribute('stroke-width', '1.5');
+  arrowArc.setAttribute('stroke-dasharray', '4 3');
+  arrowArc.setAttribute('marker-end', 'url(#arrowhead)');
+  arrowArc.setAttribute('opacity', '0.5');
+  svg.appendChild(arrowArc);
+
+  // Arrow marker
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  defs.innerHTML = `<marker id="arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6 Z" fill="#ffb347" opacity="0.5"/>
+  </marker>`;
+  svg.insertBefore(defs, svg.firstChild);
+
+  // Direction label
+  const dirLabel = document.createElementNS(SVG_NS, 'text');
+  const [dlx, dly] = polar(45, arrowR + 12);
+  dirLabel.setAttribute('x', dlx);
+  dirLabel.setAttribute('y', dly);
+  dirLabel.setAttribute('text-anchor', 'middle');
+  dirLabel.setAttribute('fill', '#ffb347');
+  dirLabel.setAttribute('opacity', '0.5');
+  dirLabel.setAttribute('font-size', '8');
+  dirLabel.textContent = 'ทิศทาง MJO';
+  svg.appendChild(dirLabel);
+}
+
+// ─── LONGITUDE BAR ────────────────────────────────────────────────────────────
+function buildLonBar() {
+  const container = document.getElementById('lonbarPhases');
+  PHASES.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'lonbar-phase';
+    el.textContent = p.num;
+    container.appendChild(el);
+  });
+}
+
+function updateLonDot(phase) {
+  const p = PHASES.find(x => x.num === phase);
+  if (!p) return;
+  // lonPct: 0 = near Thailand (left=low risk), 100 = far (right=high risk)
+  // But our bar is arranged so left = near, right = far
+  // We need to map lonPct to position
+  const pct = 100 - p.lonPct; // invert: low lonPct = near = left
+  document.getElementById('lonDot').style.left = pct + '%';
+}
+
+// ─── DETAIL CARD ──────────────────────────────────────────────────────────────
+function selectPhase(num) {
+  // Deselect old
+  if (selectedPhase !== null) {
+    const old = document.querySelector(`.seg-${selectedPhase}`);
+    if (old) { old.setAttribute('opacity', '0.82'); old.setAttribute('stroke-width', '1.5'); }
+  }
+
+  selectedPhase = num;
+  const p = PHASES.find(x => x.num === num);
+  const rs = RISK_STYLE[p.risk];
+
+  // Highlight selected segment
+  const seg = document.querySelector(`.seg-${num}`);
+  if (seg) { seg.setAttribute('opacity', '1'); seg.setAttribute('stroke-width', '3'); }
+
+  updateLonDot(num);
+
+  // Update center sub-label
+  const cSub = document.querySelector('#mjoWheel text:last-of-type');
+
+  // Render detail card
+  document.getElementById('detailCard').innerHTML = `
+    <div class="dc-eyebrow">PHASE ${num} / 8</div>
+    <div class="dc-title">${p.title}</div>
+    <span class="dc-risk ${rs.cls}">
+      <span style="width:8px;height:8px;border-radius:50%;background:${rs.dot};display:inline-block"></span>
+      ความเสี่ยงคลื่นความร้อน: ${p.riskLabel}
+    </span>
+    <div class="dc-section">
+      <div class="dc-section-label">ศูนย์กลางพายุฝนอยู่ที่</div>
+      <div class="dc-text">${p.locShort} (${p.locEn})</div>
+    </div>
+    <div class="dc-section">
+      <div class="dc-section-label">ผลต่อประเทศไทย</div>
+      <div class="dc-text">${p.body}</div>
+    </div>
+    <div class="dc-section">
+      <div class="dc-section-label">สรุปสั้น</div>
+      <div class="dc-effect">${p.effect}</div>
+    </div>
+    <div class="dc-note">${p.note}</div>
+    <div style="display:flex;gap:8px;margin-top:20px;flex-wrap:wrap">
+      ${PHASES.map(x => `
+        <div onclick="selectPhase(${x.num})" style="
+          width:28px;height:28px;border-radius:50%;
+          background:${x.segColor};opacity:${x.num===num?'1':'0.45'};
+          display:flex;align-items:center;justify-content:center;
+          font-size:11px;font-weight:800;color:#fff;cursor:pointer;
+          border:${x.num===num?'2px solid #fff':'1px solid transparent'};
+          transition:all .2s;flex-shrink:0"
+        >${x.num}</div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildWheel();
+buildLonBar();
+
+// Scroll progress
+const hb = document.getElementById('heatbar');
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  hb.style.transform = 'scaleX(' + h.scrollTop / (h.scrollHeight - h.clientHeight) + ')';
+}, { passive: true });
+
+// Reveal on scroll
+const io = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// Auto-select phase 4 after a moment to give demo
+setTimeout(() => {
+  if (!selectedPhase) selectPhase(4);
+}, 900);
+</script>
+</body>
+</html>
