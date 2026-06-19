@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Colors, GlassStyle, SoftShadow, FontFamily, DesignTokens } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { guidanceFor } from '@/constants/riskGuidance';
 import { alertTierFromRiskLevel, alertTierColor, type RiskLevel } from '@/services/forecastService';
 
@@ -12,11 +13,18 @@ export interface HeatHealthCardProps {
   compact?: boolean;
 }
 
+const TIER_ICON: Record<RiskLevel, string> = {
+  High:     'error',
+  Elevated: 'warning',
+  Normal:   'check_circle',
+  Low:      'check_circle',
+};
+
 const TIER_LABEL: Record<RiskLevel, { en: string; th: string }> = {
-  High:     { en: '⚠️ Warning',  th: '⚠️ เตือนภัย' },
-  Elevated: { en: '👀 Watch',    th: '👀 เฝ้าระวัง' },
-  Normal:   { en: '✅ Normal',   th: '✅ ปกติ' },
-  Low:      { en: '✅ Low',      th: '✅ ต่ำ' },
+  High:     { en: 'Warning',  th: 'เตือนภัย' },
+  Elevated: { en: 'Watch',    th: 'เฝ้าระวัง' },
+  Normal:   { en: 'Normal',   th: 'ปกติ' },
+  Low:      { en: 'Low',      th: 'ต่ำ' },
 };
 
 export function HeatHealthCard({ risk, compact = false }: HeatHealthCardProps) {
@@ -47,6 +55,7 @@ export function HeatHealthCard({ risk, compact = false }: HeatHealthCardProps) {
       <View style={styles.body}>
         {/* Status chip — the only "header" needed */}
         <View style={[styles.chip, { borderColor: accentColor }]}>
+          <IconSymbol name={TIER_ICON[risk]} size={11} color={accentColor} />
           <ScaledText style={[styles.chipText, { color: accentColor }]}>
             {TIER_LABEL[risk][language]}
           </ScaledText>
@@ -98,6 +107,9 @@ const styles = StyleSheet.create({
   },
   chip: {
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     borderWidth: 1,
     borderRadius: 20,
     paddingVertical: 2,

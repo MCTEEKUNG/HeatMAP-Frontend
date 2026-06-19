@@ -225,7 +225,7 @@ const en: Record<TranslationKey, string> = {
   heatExhaustion: 'Heat Exhaustion (เพลียแดด)',
   heatStroke: 'Heat Stroke (ลมแดด) — EMERGENCY',
   firstAid: 'First Aid Steps',
-  callEmergency: '🆘 Call 1669 — Emergency',
+  callEmergency: 'Call 1669 — Emergency',
 
   // Metrics
   wetBulb: 'Wet Bulb',
@@ -364,7 +364,7 @@ const th: Record<TranslationKey, string> = {
   heatExhaustion: 'เพลียแดด',
   heatStroke: 'ลมแดด (ฮีทสโตรก) — ฉุกเฉิน',
   firstAid: 'ขั้นตอนปฐมพยาบาล',
-  callEmergency: '🆘 โทร 1669 — ฉุกเฉิน',
+  callEmergency: 'โทร 1669 — ฉุกเฉิน',
 
   // Metrics
   wetBulb: 'เทอร์โมมิเตอร์เปียก',

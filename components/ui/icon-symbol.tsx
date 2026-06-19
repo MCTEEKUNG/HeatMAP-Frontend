@@ -71,6 +71,23 @@ const MAPPING: IconMapping = {
   'directions_transit': 'directions-transit',
   'place': 'place',
   
+  // Status / feedback icons
+  'check_circle': 'check-circle',
+  'check_circle_outline': 'check-circle-outline',
+  'error': 'error',
+  'error_outline': 'error-outline',
+  'visibility': 'visibility',
+  'sos': 'sos',
+  'refresh': 'refresh',
+  'circle': 'circle',
+
+  // Places / shelter icons
+  'local_cafe': 'local-cafe',
+  'local_fire_department': 'local-fire-department',
+  'location_on': 'location-on',
+  'park': 'park',
+  'place_of_worship': 'account-balance',
+
   // General icons
   'calendar': 'calendar-today',
   'bell.fill': 'notifications',

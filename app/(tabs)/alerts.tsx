@@ -179,9 +179,14 @@ export default function AlertsScreen() {
   );
 
   const todayLabel =
-    todayRisk === 'danger'  ? '🔴 DANGER — Check Safety Guide Now' :
-    todayRisk === 'caution' ? '🟡 Caution — Prepare Yourself' :
-                              '🟢 Safe — No Heatwave';
+    todayRisk === 'danger'  ? 'DANGER — Check Safety Guide Now' :
+    todayRisk === 'caution' ? 'Caution — Prepare Yourself' :
+                              'Safe — No Heatwave';
+
+  const todayLabelIcon =
+    todayRisk === 'danger'  ? 'error' :
+    todayRisk === 'caution' ? 'warning' :
+                              'check_circle';
 
   // ── Normal render ──
   return (
@@ -239,17 +244,24 @@ export default function AlertsScreen() {
                 <View style={styles.nationalRow}>
                   <View style={[styles.tierChip, { borderColor: alertTierColor('warning', isDarkMode) }]}>
                     <ScaledText variant="displaySmall" style={[styles.tierNum, { color: alertTierColor('warning', isDarkMode) }]}>{warningCount}</ScaledText>
-                    <ScaledText variant="labelSmall" style={[styles.tierLab, { color: alertTierColor('warning', isDarkMode) }]}>🔴 เตือนภัย</ScaledText>
+                    <View style={styles.tierLabRow}>
+                      <IconSymbol name="error" size={11} color={alertTierColor('warning', isDarkMode)} />
+                      <ScaledText variant="labelSmall" style={[styles.tierLab, { color: alertTierColor('warning', isDarkMode) }]}>เตือนภัย</ScaledText>
+                    </View>
                   </View>
                   <View style={[styles.tierChip, { borderColor: alertTierColor('watch', isDarkMode) }]}>
                     <ScaledText variant="displaySmall" style={[styles.tierNum, { color: alertTierColor('watch', isDarkMode) }]}>{watchCount}</ScaledText>
-                    <ScaledText variant="labelSmall" style={[styles.tierLab, { color: alertTierColor('watch', isDarkMode) }]}>🟡 เฝ้าระวัง</ScaledText>
+                    <View style={styles.tierLabRow}>
+                      <IconSymbol name="warning" size={11} color={alertTierColor('watch', isDarkMode)} />
+                      <ScaledText variant="labelSmall" style={[styles.tierLab, { color: alertTierColor('watch', isDarkMode) }]}>เฝ้าระวัง</ScaledText>
+                    </View>
                   </View>
                 </View>
               ) : (
                 <View style={[styles.allClearRow, { borderColor: alertTierColor('none', isDarkMode) }]}>
+                  <IconSymbol name="check_circle" size={15} color={alertTierColor('none', isDarkMode)} />
                   <ScaledText variant="labelMedium" style={[styles.allClearText, { color: alertTierColor('none', isDarkMode) }]}>
-                    🟢 ปกติทุกจังหวัด — ไม่มีการแจ้งเตือนคลื่นความร้อน
+                    ปกติทุกจังหวัด — ไม่มีการแจ้งเตือนคลื่นความร้อน
                   </ScaledText>
                 </View>
               )}
@@ -270,9 +282,11 @@ export default function AlertsScreen() {
 
           <View style={styles.weatherIcon}>
             <View style={styles.sunGlow} />
-            <ScaledText variant="displayLarge" style={styles.sunIcon}>
-              {todayRisk === 'danger' ? '🔥' : todayRisk === 'caution' ? '☀️' : '🌤️'}
-            </ScaledText>
+            <IconSymbol
+              name={todayRisk === 'danger' ? 'local_fire_department' : todayRisk === 'caution' ? 'wb_sunny' : 'partly_cloudy_day'}
+              size={64}
+              color={alertTierColor(todayRisk === 'danger' ? 'warning' : todayRisk === 'caution' ? 'watch' : 'none', isDarkMode)}
+            />
           </View>
 
           {/* AI risk headline — never assert "Safe" while the forecast is
@@ -297,12 +311,15 @@ export default function AlertsScreen() {
             </View>
           ) : (
             <>
-              <ScaledText
-                variant="h4"
-                style={[styles.heatStatus, { color: riskTextColor(todayRisk, isDarkMode) }]}
-              >
-                {todayLabel}
-              </ScaledText>
+              <View style={styles.heatStatusRow}>
+                <IconSymbol name={todayLabelIcon} size={18} color={riskTextColor(todayRisk, isDarkMode)} />
+                <ScaledText
+                  variant="h4"
+                  style={[styles.heatStatus, { color: riskTextColor(todayRisk, isDarkMode) }]}
+                >
+                  {todayLabel}
+                </ScaledText>
+              </View>
 
               {todayForecast && (
                 <ScaledText variant="bodyMedium" style={[styles.forecastDesc, { color: theme.textSecondary }]}>
@@ -477,12 +494,22 @@ const styles = StyleSheet.create({
   },
   nationalRow: { flexDirection: 'row', gap: DesignTokens.spacing.md },
   allClearRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     paddingVertical: DesignTokens.spacing.sm,
+    paddingHorizontal: DesignTokens.spacing.md,
     borderRadius: DesignTokens.borderRadius.lg,
     borderWidth: 1,
   },
-  allClearText: { fontWeight: '700' },
+  allClearText: { fontWeight: '700', flex: 1 },
+  tierLabRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
+  heatStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: DesignTokens.spacing.xl,
+  },
   tierChip: {
     flex: 1,
     alignItems: 'center',
@@ -515,7 +542,6 @@ const styles = StyleSheet.create({
   heatStatus: {
     fontSize: 14, fontWeight: '700',
     textTransform: 'uppercase', letterSpacing: 1,
-    marginBottom: DesignTokens.spacing.xl,
   },
   forecastDesc: { fontSize: 12, textAlign: 'center', maxWidth: 260 },
 

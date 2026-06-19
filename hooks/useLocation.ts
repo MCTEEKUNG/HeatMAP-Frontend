@@ -49,7 +49,7 @@ export function useLocation(): UseLocationReturn {
   const showPermissionExplanation = useCallback(() => {
     return new Promise<boolean>((resolve) => {
       Alert.alert(
-        '📍 Location Access Required',
+        'Location Access Required',
         'Heatwave Forecast needs your location to:\n\n' +
         '• Show heatwave predictions for your area\n' +
         '• Center the map on your current position\n' +

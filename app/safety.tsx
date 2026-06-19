@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { Colors, FontFamily, RiskColors, GlassStyle } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,12 +63,12 @@ function refreshDistances(results: ShelterResult[], lat: number, lon: number): S
 // ─── Shelter fallback (category-based Google Maps search) ─────────────────────
 
 const SHELTER_CATEGORIES = [
-  { icon: '🏬', th: 'ห้างสรรพสินค้า',  en: 'Shopping Mall',   query: 'ห้างสรรพสินค้า shopping mall' },
-  { icon: '🏥', th: 'โรงพยาบาล',        en: 'Hospital',        query: 'โรงพยาบาล hospital' },
-  { icon: '📚', th: 'ห้องสมุด',          en: 'Library',         query: 'ห้องสมุดสาธารณะ public library' },
-  { icon: '☕', th: 'ร้านกาแฟ/คาเฟ่',   en: 'Café',            query: 'ร้านกาแฟ cafe' },
-  { icon: '🏛️', th: 'อาคารรัฐบาล',      en: 'Gov. Building',   query: 'สำนักงานราชการ government office' },
-  { icon: '⛪', th: 'ศาสนสถาน',          en: 'Temple / Church', query: 'วัด temple' },
+  { icon: 'local_mall',       th: 'ห้างสรรพสินค้า',  en: 'Shopping Mall',   query: 'ห้างสรรพสินค้า shopping mall' },
+  { icon: 'local_hospital',   th: 'โรงพยาบาล',        en: 'Hospital',        query: 'โรงพยาบาล hospital' },
+  { icon: 'local_library',    th: 'ห้องสมุด',          en: 'Library',         query: 'ห้องสมุดสาธารณะ public library' },
+  { icon: 'local_cafe',       th: 'ร้านกาแฟ/คาเฟ่',   en: 'Café',            query: 'ร้านกาแฟ cafe' },
+  { icon: 'account_balance',  th: 'อาคารรัฐบาล',      en: 'Gov. Building',   query: 'สำนักงานราชการ government office' },
+  { icon: 'place_of_worship', th: 'ศาสนสถาน',          en: 'Temple / Church', query: 'วัด temple' },
 ];
 
 function openMapsSearch(query: string) {
@@ -107,30 +108,30 @@ function formatDist(m: number): string {
 // Maps Google Places primaryType → display icon + labels
 function classifyGoogleType(primaryType: string): { icon: string; th: string; en: string } | null {
   if (['hospital', 'doctor', 'pharmacy'].includes(primaryType))
-    return { icon: '🏥', th: 'โรงพยาบาล', en: 'Hospital' };
+    return { icon: 'local_hospital', th: 'โรงพยาบาล', en: 'Hospital' };
   if (['shopping_mall', 'department_store', 'supermarket'].includes(primaryType))
-    return { icon: '🏬', th: 'ห้างสรรพสินค้า', en: 'Shopping Mall' };
+    return { icon: 'local_mall', th: 'ห้างสรรพสินค้า', en: 'Shopping Mall' };
   if (['cafe', 'coffee_shop', 'bakery'].includes(primaryType))
-    return { icon: '☕', th: 'ร้านกาแฟ', en: 'Café' };
+    return { icon: 'local_cafe', th: 'ร้านกาแฟ', en: 'Café' };
   if (primaryType === 'library')
-    return { icon: '📚', th: 'ห้องสมุด', en: 'Library' };
+    return { icon: 'local_library', th: 'ห้องสมุด', en: 'Library' };
   if (['local_government_office', 'city_hall', 'courthouse'].includes(primaryType))
-    return { icon: '🏛️', th: 'อาคารสาธารณะ', en: 'Gov. Building' };
+    return { icon: 'account_balance', th: 'อาคารสาธารณะ', en: 'Gov. Building' };
   if (['hindu_temple', 'mosque', 'church', 'place_of_worship'].includes(primaryType))
-    return { icon: '⛪', th: 'วัด/ศาสนสถาน', en: 'Temple' };
+    return { icon: 'place_of_worship', th: 'วัด/ศาสนสถาน', en: 'Temple' };
   return null;
 }
 
 // Maps OSM tags → display (Overpass fallback path)
 function classifyElement(tags: Record<string, string>): { icon: string; th: string; en: string } | null {
   const { amenity, shop, office } = tags;
-  if (amenity === 'hospital' || amenity === 'clinic') return { icon: '🏥', th: 'โรงพยาบาล', en: 'Hospital' };
-  if (shop === 'mall') return { icon: '🏬', th: 'ห้างสรรพสินค้า', en: 'Shopping Mall' };
-  if (amenity === 'cafe') return { icon: '☕', th: 'ร้านกาแฟ', en: 'Café' };
-  if (amenity === 'library') return { icon: '📚', th: 'ห้องสมุด', en: 'Library' };
+  if (amenity === 'hospital' || amenity === 'clinic') return { icon: 'local_hospital', th: 'โรงพยาบาล', en: 'Hospital' };
+  if (shop === 'mall') return { icon: 'local_mall', th: 'ห้างสรรพสินค้า', en: 'Shopping Mall' };
+  if (amenity === 'cafe') return { icon: 'local_cafe', th: 'ร้านกาแฟ', en: 'Café' };
+  if (amenity === 'library') return { icon: 'local_library', th: 'ห้องสมุด', en: 'Library' };
   if (office === 'government' || office === 'administrative' || amenity === 'townhall' || amenity === 'community_centre')
-    return { icon: '🏛️', th: 'อาคารสาธารณะ', en: 'Gov. Building' };
-  if (amenity === 'place_of_worship') return { icon: '⛪', th: 'วัด/ศาสนสถาน', en: 'Temple' };
+    return { icon: 'account_balance', th: 'อาคารสาธารณะ', en: 'Gov. Building' };
+  if (amenity === 'place_of_worship') return { icon: 'place_of_worship', th: 'วัด/ศาสนสถาน', en: 'Temple' };
   return null;
 }
 
@@ -504,9 +505,10 @@ out center 40;`;
             <View style={styles.activityChips}>
               {(['general', 'outdoor'] as const).map((mode) => {
                 const isActive = activityMode === mode;
+                const iconName = mode === 'general' ? 'house.fill' : 'directions_walk';
                 const label = mode === 'general'
-                  ? (isTh ? '🏠 ทั่วไป' : '🏠 General')
-                  : (isTh ? '🦺 กลางแจ้ง' : '🦺 Outdoor');
+                  ? (isTh ? 'ทั่วไป' : 'General')
+                  : (isTh ? 'กลางแจ้ง' : 'Outdoor');
                 return (
                   <TouchableOpacity
                     key={mode}
@@ -520,6 +522,7 @@ out center 40;`;
                     accessibilityRole="tab"
                     accessibilityState={{ selected: isActive }}
                   >
+                    <IconSymbol name={iconName} size={14} color={isActive ? '#fff' : theme.textMuted} />
                     <ScaledText style={[styles.activityChipText, { color: isActive ? '#fff' : theme.textMuted }]}>
                       {label}
                     </ScaledText>
@@ -536,11 +539,18 @@ out center 40;`;
             {isTh ? 'ทำตอนนี้เลย' : 'Do this now'}
           </ScaledText>
           {doneCount > 0 && (
-            <ScaledText style={[styles.progressText, { color: allDone ? RiskColors.safe : accentColor }]}>
-              {allDone
-                ? (isTh ? '✓ ครบทุกขั้นตอน' : '✓ All done')
-                : `${doneCount}/${steps.length}`}
-            </ScaledText>
+            allDone ? (
+              <View style={styles.allDoneInline}>
+                <IconSymbol name="check_circle" size={14} color={RiskColors.safe} />
+                <ScaledText style={[styles.progressText, { color: RiskColors.safe }]}>
+                  {isTh ? 'ครบทุกขั้นตอน' : 'All done'}
+                </ScaledText>
+              </View>
+            ) : (
+              <ScaledText style={[styles.progressText, { color: accentColor }]}>
+                {`${doneCount}/${steps.length}`}
+              </ScaledText>
+            )
           )}
         </View>
 
@@ -577,7 +587,7 @@ out center 40;`;
                 ]}
               >
                 {isDone ? (
-                  <ScaledText style={styles.checkMark}>✓</ScaledText>
+                  <IconSymbol name="check" size={16} color="#fff" />
                 ) : (
                   <ScaledText style={[styles.checkNum, { color: isFirst ? '#fff' : theme.textMuted }]}>
                     {i + 1}
@@ -608,9 +618,12 @@ out center 40;`;
         {/* ── Cool Shelter Finder (High / Elevated only) ── */}
         {showShelter && (
           <View style={[styles.shelterCard, GlassStyle[isDarkMode ? 'dark' : 'light'], { borderColor: accentColor + '55', borderWidth: 1 }]}>
-            <ScaledText style={[styles.shelterTitle, { color: theme.text }]}>
-              {isTh ? '🧊 หาที่พักร้อนใกล้คุณ' : '🧊 Find a Cool Shelter'}
-            </ScaledText>
+            <View style={styles.shelterTitleRow}>
+              <IconSymbol name="ac_unit" size={18} color={accentColor} />
+              <ScaledText style={[styles.shelterTitle, { color: theme.text }]}>
+                {isTh ? 'หาที่พักร้อนใกล้คุณ' : 'Find a Cool Shelter'}
+              </ScaledText>
+            </View>
 
             {/* idle */}
             {shelterPhase === 'idle' && (
@@ -625,8 +638,9 @@ out center 40;`;
                   onPress={fetchShelters}
                   accessibilityRole="button"
                 >
+                  <IconSymbol name="location_on" size={16} color="#fff" />
                   <ScaledText style={styles.shelterFetchText}>
-                    {isTh ? '📍 หาตอนนี้' : '📍 Find Now'}
+                    {isTh ? 'หาตอนนี้' : 'Find Now'}
                   </ScaledText>
                 </TouchableOpacity>
               </>
@@ -660,7 +674,7 @@ out center 40;`;
                     key={place.id}
                     style={[styles.shelterResultRow, { borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]}
                   >
-                    <ScaledText style={styles.shelterResultIcon}>{place.icon}</ScaledText>
+                    <IconSymbol name={place.icon} size={20} color={theme.textMuted} style={styles.shelterResultIcon} />
                     <View style={styles.shelterResultBody}>
                       <ScaledText style={[styles.shelterResultName, { color: theme.text }]} numberOfLines={1}>
                         {place.name}
@@ -708,7 +722,7 @@ out center 40;`;
                       accessibilityRole="button"
                       accessibilityLabel={isTh ? s.th : s.en}
                     >
-                      <ScaledText style={styles.shelterIcon}>{s.icon}</ScaledText>
+                      <IconSymbol name={s.icon} size={22} color={theme.textMuted} />
                       <ScaledText style={[styles.shelterLabel, { color: theme.text }]}>
                         {isTh ? s.th : s.en}
                       </ScaledText>
@@ -757,6 +771,7 @@ out center 40;`;
           accessibilityRole="button"
           accessibilityLabel={t('callEmergency')}
         >
+          <IconSymbol name="sos" size={20} color="#fff" />
           <ScaledText style={styles.emergencyText}>
             {t('callEmergency')}
           </ScaledText>
@@ -846,6 +861,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingVertical: 4,
     paddingHorizontal: 11,
     borderRadius: 999,
@@ -855,6 +873,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: FontFamily.bodySemi,
     fontWeight: '600',
+  },
+  allDoneInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 
   // ── Section header + progress ──
@@ -895,13 +918,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
     marginTop: 1,
-  },
-  checkMark: {
-    fontSize: 14,
-    color: '#fff',
-    fontFamily: FontFamily.display,
-    fontWeight: '700',
-    lineHeight: 18,
   },
   checkNum: {
     fontSize: 12,
@@ -945,6 +961,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     gap: 10,
   },
+  shelterTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   shelterTitle: {
     fontSize: 14,
     fontFamily: FontFamily.display,
@@ -962,6 +983,9 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   shelterFetchBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     alignSelf: 'flex-start',
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -987,7 +1011,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  shelterResultIcon: { fontSize: 20, flexShrink: 0 },
+  shelterResultIcon: { flexShrink: 0 },
   shelterResultBody: { flex: 1, gap: 1 },
   shelterResultName: {
     fontSize: 13,
@@ -1036,7 +1060,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 5,
   },
-  shelterIcon: { fontSize: 22 },
   shelterLabel: {
     fontSize: 10,
     fontFamily: FontFamily.bodySemi,
@@ -1099,9 +1122,12 @@ const styles = StyleSheet.create({
 
   // ── Emergency ──
   emergencyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     paddingVertical: 15,
     borderRadius: 14,
-    alignItems: 'center',
     marginBottom: 12,
     ...Platform.select({
       ios: { shadowColor: '#A93226', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10 },
