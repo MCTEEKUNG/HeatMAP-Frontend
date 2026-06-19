@@ -12,8 +12,6 @@ export type TabKey = 'map' | 'alerts' | 'profile';
 const TABS: { key: TabKey; icon: string; labelKey: string; route: string }[] = [
   { key: 'map', icon: 'map.fill', labelKey: 'navMap', route: '/(tabs)/map' },
   { key: 'alerts', icon: 'notifications', labelKey: 'navAlerts', route: '/(tabs)/alerts' },
-  // No login concept in this app — the 3rd tab is Settings + model transparency,
-  // not a user profile (everyone receives the same public information).
   { key: 'profile', icon: 'settings', labelKey: 'navSettings', route: '/(tabs)/settings' },
 ];
 

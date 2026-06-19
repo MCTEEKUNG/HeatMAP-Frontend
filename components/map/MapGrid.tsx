@@ -65,15 +65,6 @@ export function riskForFeatureName(
   return null;
 }
 
-const RISK_LABEL_TH: Record<ChoroplethLevel, string> = {
-  low:     'ต่ำ',
-  normal:  'ปกติ',
-  safe:    'ปกติ',
-  watch:   'เฝ้าระวัง',
-  warning: 'เตือนภัย',
-  extreme: 'อันตราย',
-};
-
 // Thailand geographic boundaries
 const THAILAND_BOUNDS = {
   north: 20.5,
@@ -364,11 +355,6 @@ function WebLeafletMap({
           }}
           onEachFeature={(feature: any, layer: any) => {
             const featureName = feature?.properties?.name ?? '';
-            const z = riskForFeatureName(featureName, provinceRisk!);
-            layer.bindPopup(z
-              ? `<b>${z.nameTh}</b><br>ระดับ${RISK_LABEL_TH[z.level]} · โอกาสเกิด ${Math.round(z.probability)}%`
-              : `<b>${featureName}</b><br>ความเสี่ยงต่ำ`);
-            // Wire click to province selection
             layer.on('click', () => {
               onSelectProvince?.(normalizeProvinceName(featureName));
             });

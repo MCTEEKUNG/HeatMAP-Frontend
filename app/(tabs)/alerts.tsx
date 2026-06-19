@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Colors, DesignTokens, GlassStyle } from '@/constants/theme';
+import { Colors, DesignTokens, FontFamily, GlassStyle } from '@/constants/theme';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { HistoricalRunBanner } from '@/components/forecast/HistoricalRunBanner';
 import { useSettings } from '@/hooks/useSettings';
@@ -48,6 +47,19 @@ const RISK_COLORS = {
 function riskTextColor(risk: RiskLevel, isDark: boolean): string {
   return RISK_COLORS[risk]?.text[isDark ? 'dark' : 'light'] ?? (isDark ? '#A1A1AA' : '#6B7280');
 }
+
+// ─── Forecast confidence per week index (0 = Week 2, 1 = Week 3, …) ──────────
+// Verified backtest (Jan–Feb 2024, 77 provinces, B=2000 bootstrap):
+//   Lead 2: BSS +0.298 AUC 0.592 — strong skill
+//   Lead 3: BSS +0.259 AUC 0.686 — strong skill (highest AUC)
+//   Lead 4: BSS +0.073 AUC 0.569 — modest skill
+//   Lead 5: BSS −0.004 AUC 0.437 — no skill (below climatology)
+//   Lead 6: BSS +0.189 AUC 0.462 — calibration artefact, no discrimination
+const WEEK_CONFIDENCE: Array<{ th: string; en: string; color: string } | null> = [
+  null,                                                                        // Week 2 — BSS +0.298, AUC 0.592
+  null,                                                                        // Week 3 — BSS +0.259, AUC 0.686 (best AUC)
+  { th: 'skill ลดลง',      en: 'Weakening skill',   color: '#C98A2D' },      // Week 4 — BSS +0.073, AUC 0.569
+];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -144,21 +156,25 @@ export default function AlertsScreen() {
     await refreshProvince();
   }, [fetchMap, refreshProvince]);
 
+  // Leads 5–6 have no forecast skill (backtest: BSS < 0 or AUC < 0.5).
+  // Only show leads 2–4 to users.
+  const actionableDays = provinceDays.slice(0, 3);
+
   // Derive today's headline from the SOONEST province forecast day (today or
   // the nearest upcoming target_date).
-  const todayForecast = provinceDays.length > 0 ? provinceDays[0] : null;
+  const todayForecast = actionableDays.length > 0 ? actionableDays[0] : null;
   const todayRisk: RiskLevel = todayForecast
     ? tierToRisk(alertTierFromRiskLevel(todayForecast.risk_level))
     : 'safe';
 
   const heatwaveDays = useMemo(
-    () => provinceDays.filter((d) => Boolean(d.predicted_label)).length,
+    () => actionableDays.filter((d) => Boolean(d.predicted_label)).length,
     [provinceDays],
   );
   const avgProbability = useMemo(
-    () => provinceDays.length === 0
+    () => actionableDays.length === 0
       ? 0
-      : provinceDays.reduce((s, d) => s + Number(d.probability ?? 0), 0) / provinceDays.length,
+      : actionableDays.reduce((s, d) => s + Number(d.probability ?? 0), 0) / actionableDays.length,
     [provinceDays],
   );
 
@@ -171,15 +187,10 @@ export default function AlertsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: isDarkMode ? 'rgba(26,21,18,0.85)' : 'rgba(255,255,255,0.85)' }]}>
-        <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
-          onPress={() => router.back()}
-        >
-          <IconSymbol size={20} name="arrow_back_ios_new" color={theme.icon} />
-        </TouchableOpacity>
-        <ScaledText variant="h3" style={[styles.headerTitle, { color: theme.text }]}>{t('forecastDetails')}</ScaledText>
-        <TouchableOpacity onPress={refresh} disabled={forecastLoading}>
+      <View style={styles.header}>
+        <View style={styles.headerSide} />
+        <ScaledText style={[styles.headerTitle, { color: theme.text }]}>{t('navAlerts')}</ScaledText>
+        <TouchableOpacity onPress={refresh} disabled={forecastLoading} style={styles.headerSide}>
           {forecastLoading
             ? <ActivityIndicator size="small" color={theme.primary} />
             : <IconSymbol size={20} name="refresh" color={theme.textSecondary} />}
@@ -295,7 +306,7 @@ export default function AlertsScreen() {
 
               {todayForecast && (
                 <ScaledText variant="bodyMedium" style={[styles.forecastDesc, { color: theme.textSecondary }]}>
-                  {`${heatwaveDays} heatwave weeks predicted in the next ${provinceDays.length} weeks — ${(avgProbability * 100).toFixed(0)}% average risk`}
+                  {`${heatwaveDays} heatwave weeks predicted in the next ${actionableDays.length} weeks — ${(avgProbability * 100).toFixed(0)}% average risk`}
                 </ScaledText>
               )}
 
@@ -313,10 +324,10 @@ export default function AlertsScreen() {
           <HeatHealthCard risk={tierToRiskLevel(todayRisk as AlertDisplayTier)} />
         )}
 
-        {/* ── 2–6 Week Outlook ── */}
+        {/* ── 2–4 Week Outlook ── */}
         <View style={styles.calendarSection}>
           <ScaledText variant="labelMedium" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            {language === 'th' ? 'แนวโน้ม 2–6 สัปดาห์ข้างหน้า' : '2–6 week outlook'}
+            {language === 'th' ? 'แนวโน้ม 2–4 สัปดาห์ข้างหน้า' : '2–4 week outlook'}
           </ScaledText>
 
           <View style={[styles.calendarCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
@@ -340,36 +351,56 @@ export default function AlertsScreen() {
               </View>
             ) : (
               <>
-                {provinceDays.map((day, i) => {
+                {actionableDays.map((day, i) => {
                   const tier = alertTierFromRiskLevel(day.risk_level);
                   const tierColor = alertTierColor(tier, isDarkMode);
+                  const conf = WEEK_CONFIDENCE[i] ?? null;
+                  const isUncertain = conf !== null;
+
                   return (
-                    <View
-                      key={day.target_date}
-                      style={[
-                        styles.weekRow,
-                        { borderBottomColor: theme.border },
-                      ]}
-                    >
-                      <View style={styles.weekLeft}>
-                        <ScaledText style={[styles.weekTitle, { color: theme.text }]}>
-                          {language === 'th' ? `สัปดาห์ที่ ${i + 2}` : `Week ${i + 2}`}
-                        </ScaledText>
-                        <ScaledText style={[styles.weekDate, { color: theme.textSecondary }]}>
-                          {formatForecastDate(day.target_date)}
-                        </ScaledText>
+                    <React.Fragment key={day.target_date}>
+
+                      <View
+                        style={[
+                          styles.weekRow,
+                          { borderBottomColor: theme.border },
+                          isUncertain && { opacity: 0.82 },
+                        ]}
+                      >
+                        <View style={styles.weekLeft}>
+                          <ScaledText style={[styles.weekTitle, { color: theme.text }]}>
+                            {language === 'th' ? `สัปดาห์ที่ ${i + 2}` : `Week ${i + 2}`}
+                          </ScaledText>
+                          <ScaledText style={[styles.weekDate, { color: theme.textSecondary }]}>
+                            {formatForecastDate(day.target_date)}
+                          </ScaledText>
+                          {conf && (
+                            <View style={[styles.confBadge, { backgroundColor: conf.color + '18', borderColor: conf.color + '40' }]}>
+                              <ScaledText style={[styles.confText, { color: conf.color }]}>
+                                {language === 'th' ? conf.th : conf.en}
+                              </ScaledText>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.weekRight}>
+                          <ScaledText style={[styles.weekPct, { color: tierColor }]}>
+                            {riskPercent(day.probability)}%
+                          </ScaledText>
+                          <ScaledText style={[styles.weekTier, { color: tierColor }]}>
+                            {alertTierLabel(tier, language)}
+                          </ScaledText>
+                        </View>
                       </View>
-                      <View style={styles.weekRight}>
-                        <ScaledText style={[styles.weekPct, { color: tierColor }]}>
-                          {riskPercent(day.probability)}%
-                        </ScaledText>
-                        <ScaledText style={[styles.weekTier, { color: tierColor }]}>
-                          {alertTierLabel(tier, language)}
-                        </ScaledText>
-                      </View>
-                    </View>
+                    </React.Fragment>
                   );
                 })}
+
+                {/* Footnote: verified backtest results */}
+                <ScaledText style={[styles.outlookNote, { color: theme.textMuted }]}>
+                  {language === 'th'
+                    ? 'ทดสอบย้อนหลัง (ม.ค.–ก.พ. 2567, 77 จังหวัด): Lead 2–4 ดีกว่าค่าเฉลี่ยภูมิอากาศ (BSS +0.07 ถึง +0.30) — Lead 5–6 ไม่มี skill ใช้เป็นสัญญาณอ้างอิงเท่านั้น'
+                    : 'Backtest (Jan–Feb 2024, 77 provinces): Leads 2–4 beat provincial climatology (BSS +0.07 to +0.30). Leads 5–6 have no forecast skill — treat as climate background only.'}
+                </ScaledText>
               </>
             )}
           </View>
@@ -389,18 +420,25 @@ const styles = StyleSheet.create({
   container:      { flex: 1 },
   centeredContent:{ flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: DesignTokens.spacing.lg,
-    paddingVertical:   DesignTokens.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
   },
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    justifyContent: 'center', alignItems: 'center',
+  headerSide: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', letterSpacing: -0.5 },
-  headerSpacer: { width: 40 },
+  headerTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontFamily: FontFamily.display,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   retryButton: {
     paddingVertical: DesignTokens.spacing.md,
     paddingHorizontal: DesignTokens.spacing.lg,
@@ -505,6 +543,34 @@ const styles = StyleSheet.create({
   weekRight: { alignItems: 'flex-end' },
   weekPct: { fontSize: 20, fontWeight: '700' },
   weekTier: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+
+  // Confidence / uncertainty
+  accuracySep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+  },
+  accuracySepLine: { flex: 1, height: StyleSheet.hairlineWidth },
+  accuracySepLabel: { fontSize: 10, fontFamily: FontFamily.bodySemi, fontWeight: '600', letterSpacing: 0.5 },
+  confBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  confText: { fontSize: 10, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  outlookNote: {
+    fontSize: 11,
+    fontFamily: FontFamily.body,
+    lineHeight: 16,
+    paddingHorizontal: 4,
+    paddingTop: 10,
+    paddingBottom: 4,
+    textAlign: 'center',
+  },
 
   // Metrics
   metricsSection: { marginBottom: DesignTokens.spacing.lg },

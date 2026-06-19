@@ -80,9 +80,11 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* App bar */}
-        <View style={styles.appbar}>
-          <ScaledText style={[styles.appbarTitle, { color: theme.primary }]}>ตั้งค่า</ScaledText>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerSide} />
+          <ScaledText style={[styles.headerTitle, { color: theme.text }]}>ตั้งค่า</ScaledText>
+          <View style={styles.headerSide} />
         </View>
 
         <SectionH>การแจ้งเตือน</SectionH>
@@ -165,8 +167,21 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 104, paddingHorizontal: 16 },
-  appbar: { paddingTop: 14, paddingBottom: 6 },
-  appbarTitle: { fontSize: 20, fontFamily: FontFamily.display, fontWeight: '700' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
+  },
+  headerSide: { width: 36, height: 36 },
+  headerTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontFamily: FontFamily.display,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   sectionH: {
     fontSize: 12.5,
     fontFamily: FontFamily.displaySemi,

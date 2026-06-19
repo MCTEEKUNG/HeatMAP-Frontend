@@ -1,7 +1,7 @@
 /**
  * ProvinceForecastPanel
  *
- * Renders the 2–6 week per-province heatwave outlook returned by
+ * Renders the 2–4 week per-province heatwave outlook returned by
  * `/api/forecast/province/:id` (via `useProvinceForecast`), with the model's
  * "as of" (`generated_at`) timestamp. Handles loading / empty / error states
  * so it degrades gracefully when the backend is asleep or offline.
@@ -40,6 +40,7 @@ export function ProvinceForecastPanel({ province }: Props) {
 
   const provinceName = language === 'th' ? province.name_th : province.name_en;
   const asOf = formatGeneratedAt(generatedAt);
+  const actionable = forecast.slice(0, 3); // leads 2–4 only (5–6 have no skill)
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -85,7 +86,7 @@ export function ProvinceForecastPanel({ province }: Props) {
 
       {!loading && !error && forecast.length > 0 && (
         <View style={styles.daysRow}>
-          {forecast.map((d, i) => {
+          {actionable.map((d, i) => {
             const color = getRiskColor(d.risk_level);
             const weekNum = i + 2;
             const weekLabel = language === 'th' ? `สัปดาห์ ${weekNum}` : `Wk ${weekNum}`;
@@ -112,7 +113,7 @@ export function ProvinceForecastPanel({ province }: Props) {
       )}
 
       {!loading && !error && forecast.length > 0 && (
-        <HeatHealthCard risk={worstRiskOf(forecast)} compact />
+        <HeatHealthCard risk={worstRiskOf(actionable)} compact />
       )}
     </View>
   );

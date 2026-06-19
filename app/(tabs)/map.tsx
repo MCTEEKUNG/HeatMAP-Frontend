@@ -290,6 +290,21 @@ export default function MapScreen() {
       {/* Selected-province 7-day forecast panel (from /api/forecast/province/:id) */}
       {selectedProvince && (
         <View style={styles.provincePanel} pointerEvents="box-none">
+          {/* Close row — dismisses province panel and restores the "your area" card */}
+          <TouchableOpacity
+            style={[
+              styles.closePanelBtn,
+              { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' },
+            ]}
+            onPress={() => setSelectedProvince(null)}
+            accessibilityRole="button"
+            accessibilityLabel="ปิดแผงจังหวัด"
+          >
+            <IconSymbol size={15} name="xmark" color={theme.textSecondary} />
+            <ScaledText style={[styles.closePanelText, { color: theme.textSecondary }]}>
+              {language === 'th' ? 'ปิด' : 'Close'}
+            </ScaledText>
+          </TouchableOpacity>
           <ProvinceForecastPanel province={selectedProvince} />
         </View>
       )}
@@ -388,8 +403,8 @@ export default function MapScreen() {
           )}
         </View>
 
-        {/* Locate FAB — below the chips, hugging the right edge */}
-        <View style={[styles.fabContainer, { right: 12, top: 64 }]}>
+        {/* Locate FAB — below the status overlay (top ~64+44=108), hugging right edge */}
+        <View style={[styles.fabContainer, { right: 12, top: 120 }]}>
           <TouchableOpacity
             style={[
               styles.fab,
@@ -411,8 +426,8 @@ export default function MapScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── "พื้นที่ของคุณ" glass card — floats above the glass tab bar ── */}
-        <View style={[styles.userCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
+        {/* ── "พื้นที่ของคุณ" glass card — hidden when a province panel is open ── */}
+        {!selectedProvince && <View style={[styles.userCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
           <View style={styles.ucLocRow}>
             <ScaledText style={[styles.ucLoc, { color: theme.textMuted }]}>
               พื้นที่ของคุณ{myProvince ? ` · ${myProvince.name_th}` : ''}
@@ -468,11 +483,8 @@ export default function MapScreen() {
                 <ScaledText style={[styles.mlTxt, { color: theme.textMuted }]}>{lbl}</ScaledText>
               </View>
             ))}
-            <ScaledText style={[styles.mlNote, { color: theme.textMuted }]}>
-              {'สีแสดง "ความเสี่ยงที่พยากรณ์" ไม่ใช่คลื่นความร้อนที่ยืนยันแล้ว'}
-            </ScaledText>
           </View>
-        </View>
+        </View>}
       </View>
 
       {/* Floating liquid-glass tab bar (shared) */}
@@ -521,31 +533,31 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 12,
     right: 12,
-    bottom: 92, // clears the floating glass tab bar (14 + 64 + gap)
+    bottom: 92,
     zIndex: 30,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 12,
   },
   ucLocRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    gap: 8,
+    gap: 6,
   },
-  ucLoc: { fontSize: 12, fontFamily: FontFamily.bodyMedium },
-  ucTs: { fontSize: 10.5, fontFamily: FontFamily.body },
+  ucLoc: { fontSize: 11, fontFamily: FontFamily.bodyMedium },
+  ucTs: { fontSize: 10, fontFamily: FontFamily.body },
   ucRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 8,
+    marginTop: 2,
+    gap: 6,
   },
-  ucRisk: { fontSize: 19, fontFamily: FontFamily.display, fontWeight: '700', flexShrink: 1 },
-  ucPct: { fontSize: 13, fontFamily: FontFamily.displaySemi, fontWeight: '600' },
-  ucGuidance: { fontSize: 11, fontFamily: FontFamily.body, marginTop: 4, lineHeight: 16 },
-  ucCta: { marginTop: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, alignSelf: 'flex-start' },
-  ucCtaText: { fontSize: 11.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  ucRisk: { fontSize: 16, fontFamily: FontFamily.display, fontWeight: '700', flexShrink: 1 },
+  ucPct: { fontSize: 12, fontFamily: FontFamily.displaySemi, fontWeight: '600' },
+  ucGuidance: { fontSize: 11, fontFamily: FontFamily.body, marginTop: 3, lineHeight: 15 },
+  ucCta: { marginTop: 4, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 7, alignSelf: 'flex-start' },
+  ucCtaText: { fontSize: 11, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
   ctaPrimary: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -560,14 +572,14 @@ const styles = StyleSheet.create({
   miniLegend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 10,
-    paddingTop: 9,
+    gap: 8,
+    marginTop: 6,
+    paddingTop: 6,
     borderTopWidth: 1,
   },
-  mlItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  mlDot: { width: 7, height: 7, borderRadius: 4 },
-  mlTxt: { fontSize: 10.5, fontFamily: FontFamily.body },
+  mlItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  mlDot: { width: 6, height: 6, borderRadius: 3 },
+  mlTxt: { fontSize: 10, fontFamily: FontFamily.body },
   mlNote: { width: '100%', fontSize: 10, fontFamily: FontFamily.body, marginTop: 1 },
   topControls: {
     position: 'absolute',
@@ -628,10 +640,25 @@ const styles = StyleSheet.create({
   },
   provincePanel: {
     position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: 200,
+    left: 12,
+    right: 12,
+    bottom: 90,
     zIndex: 25,
+  },
+  closePanelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-end',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    marginBottom: 6,
+  },
+  closePanelText: {
+    fontSize: 12,
+    fontFamily: FontFamily.bodySemi,
+    fontWeight: '600',
   },
   warningBanner: {
     position: 'absolute',
