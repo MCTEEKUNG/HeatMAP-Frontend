@@ -6,21 +6,10 @@ import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { useSettings, Language, FontSize } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
-// Keep in sync with models/model_card.json (served model) — judges read this.
-const MODEL_INFO = {
-  model: 'Logistic Regression (Balanced) · Platt Cal',
-  coverage: '77 จังหวัด · พยากรณ์ล่วงหน้า 2-6 สัปดาห์',
-  source: 'ERA5 / CDS (1994–2025)',
-};
 
-/**
- * SETTINGS — "ตั้งค่า" (Calm Authority). Deliberately NOT a profile screen:
- * this app has no login — everyone receives the same public information.
- * What lives here instead: notification + display preferences, and the
- * "เกี่ยวกับระบบพยากรณ์" transparency card (model, data sources, heatwave
- * definition) so anyone — including science-fair judges — can see exactly
- * how the forecast is made.
- */
+const MODEL_LABEL = 'Logistic Regression (Balanced) · Platt Cal';
+const SOURCE_LABEL = 'ERA5 / CDS (1994–2023)';
+
 export default function SettingsScreen() {
   const {
     isDarkMode,
@@ -33,27 +22,39 @@ export default function SettingsScreen() {
     setPushNotifications,
     hapticFeedback,
     setHapticFeedback,
+    t,
   } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
 
   const card = [styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, SoftShadow.light];
 
-  const SectionH = ({ children }: { children: string }) => (
-    <ScaledText style={[styles.sectionH, { color: theme.textMuted }]}>{children}</ScaledText>
+  // ── Sub-components ──────────────────────────────────────────────────────────
+
+  const SectionH = ({ label }: { label: string }) => (
+    <ScaledText fontSize={12} style={[styles.sectionH, { color: theme.textMuted }]}>
+      {label}
+    </ScaledText>
   );
 
-  const Row = ({ icon, label, sub, right, last }: {
-    icon: string; label: string; sub?: string; right: React.ReactNode; last?: boolean;
+  /** A settings row. Pass `stack` to put the right control below the label (for wide controls). */
+  const Row = ({ icon, label, sub, right, last, stack }: {
+    icon: string; label: string; sub?: string;
+    right: React.ReactNode; last?: boolean; stack?: boolean;
   }) => (
-    <View style={[styles.row, !last && { borderBottomWidth: 1, borderBottomColor: theme.border }]}>
+    <View style={[
+      stack ? styles.rowStack : styles.row,
+      !last && { borderBottomWidth: 1, borderBottomColor: theme.border },
+    ]}>
       <View style={styles.rowLeft}>
         <IconSymbol size={20} name={icon as never} color={theme.icon} />
         <View style={styles.rowText}>
-          <ScaledText style={[styles.rowLabel, { color: theme.text }]}>{label}</ScaledText>
-          {sub ? <ScaledText style={[styles.rowSub, { color: theme.textMuted }]}>{sub}</ScaledText> : null}
+          <ScaledText fontSize={15} style={[styles.rowLabel, { color: theme.text }]}>{label}</ScaledText>
+          {sub ? (
+            <ScaledText fontSize={12} style={[styles.rowSub, { color: theme.textMuted }]}>{sub}</ScaledText>
+          ) : null}
         </View>
       </View>
-      {right}
+      <View style={stack ? styles.stackRight : undefined}>{right}</View>
     </View>
   );
 
@@ -68,8 +69,9 @@ export default function SettingsScreen() {
           onPress={() => onChange(opt.v)}
           accessibilityRole="button"
           accessibilityState={{ selected: value === opt.v }}
+          accessibilityLabel={opt.label}
         >
-          <ScaledText style={[styles.segmentText, { color: value === opt.v ? '#FFFFFF' : theme.textMuted }]}>
+          <ScaledText fontSize={13} style={[styles.segmentText, { color: value === opt.v ? '#FFFFFF' : theme.textMuted }]}>
             {opt.label}
           </ScaledText>
         </TouchableOpacity>
@@ -79,35 +81,41 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Header ── */}
         <View style={styles.header}>
-          <View style={styles.headerSide} />
-          <ScaledText style={[styles.headerTitle, { color: theme.text }]}>ตั้งค่า</ScaledText>
-          <View style={styles.headerSide} />
+          <ScaledText fontSize={17} style={[styles.headerTitle, { color: theme.text }]}>
+            {t('settingsTitle')}
+          </ScaledText>
         </View>
 
-        <SectionH>การแจ้งเตือน</SectionH>
+        {/* ── Notifications ── */}
+        <SectionH label={t('notifications')} />
         <View style={card}>
           <Row
             icon="notifications_active"
-            label="แจ้งเตือนความเสี่ยง"
-            sub="เตือนเมื่อพื้นที่ของคุณเข้าเกณฑ์เฝ้าระวัง/เตือนภัย"
+            label={t('riskAlerts')}
+            sub={t('riskAlertsSub')}
             right={<CustomSwitch value={pushNotifications} onValueChange={setPushNotifications} />}
           />
           <Row
             last
             icon="vibration"
-            label="สั่นตอบสนอง"
+            label={t('hapticFeedback')}
             right={<CustomSwitch value={hapticFeedback} onValueChange={setHapticFeedback} />}
           />
         </View>
 
-        <SectionH>การแสดงผล</SectionH>
+        {/* ── Display ── */}
+        <SectionH label={t('sectionDisplay')} />
         <View style={card}>
           <Row
             icon="language"
-            label="ภาษา"
+            label={t('language')}
             right={
               <Segmented<Language>
                 value={language}
@@ -116,13 +124,19 @@ export default function SettingsScreen() {
               />
             }
           />
+          {/* Font-size row: stacked so 3 pills don't crowd the label */}
           <Row
+            stack
             icon="format_size"
-            label="ขนาดตัวอักษร"
+            label={t('fontSize')}
             right={
               <Segmented<FontSize>
                 value={fontSize}
-                options={[{ v: 'small', label: 'เล็ก' }, { v: 'default', label: 'กลาง' }, { v: 'large', label: 'ใหญ่' }]}
+                options={[
+                  { v: 'small',   label: t('fontSizeSmall') },
+                  { v: 'default', label: t('fontSizeMedium') },
+                  { v: 'large',   label: t('fontSizeLarge') },
+                ]}
                 onChange={setFontSize}
               />
             }
@@ -130,34 +144,45 @@ export default function SettingsScreen() {
           <Row
             last
             icon={isDarkMode ? 'dark_mode' : 'light_mode'}
-            label="ธีมมืด"
+            label={t('darkMode')}
+            sub={isDarkMode ? t('darkModeOn') : t('darkModeOff')}
             right={<CustomSwitch value={isDarkMode} onValueChange={(v) => setThemeMode(v ? 'dark' : 'light')} />}
           />
         </View>
 
-        <SectionH>เกี่ยวกับระบบพยากรณ์</SectionH>
+        {/* ── About the forecast ── */}
+        <SectionH label={t('sectionAbout')} />
         <View style={[...card, styles.aboutCard]}>
           {([
-            ['โมเดล', MODEL_INFO.model],
-            ['ครอบคลุม', MODEL_INFO.coverage],
-            ['แหล่งข้อมูล', MODEL_INFO.source],
+            [t('aboutModel'),    MODEL_LABEL],
+            [t('aboutCoverage'), t('aboutCoverageVal')],
+            [t('aboutSource'),   SOURCE_LABEL],
           ] as const).map(([k, v], i, arr) => (
-            <View key={k} style={[styles.aboutRow, i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border, borderStyle: 'dashed' as never }]}>
-              <ScaledText style={[styles.aboutKey, { color: theme.textMuted }]}>{k}</ScaledText>
-              <ScaledText style={[styles.aboutVal, { color: theme.text }]}>{v}</ScaledText>
+            <View
+              key={k}
+              style={[
+                styles.aboutRow,
+                i < arr.length - 1 && {
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.border,
+                  borderStyle: 'dashed' as never,
+                },
+              ]}
+            >
+              <ScaledText fontSize={12} style={[styles.aboutKey, { color: theme.textMuted }]}>{k}</ScaledText>
+              <ScaledText fontSize={12} style={[styles.aboutVal, { color: theme.text }]}>{v}</ScaledText>
             </View>
           ))}
-          <ScaledText style={[styles.aboutNote, { color: theme.textMuted }]}>
-            {'"คลื่นความร้อน" ในระบบนี้ = อุณหภูมิสูงสุดรายวัน (Tmax) เกิน p90 ของวันเดียวกันในรอบ 30 ปี (1994–2023) ติดต่อกันอย่างน้อย 3 วัน ภายใน window 7 วัน — เกณฑ์ p90 คำนวณแยกรายจังหวัดและรายวัน'}
+          <ScaledText fontSize={11.5} style={[styles.aboutNote, { color: theme.textMuted }]}>
+            {t('aboutHeatwaveDef')}
           </ScaledText>
         </View>
 
-        <ScaledText style={[styles.footerNote, { color: theme.textMuted }]}>
-          แอปนี้ไม่ต้องสมัครสมาชิก — ทุกคนเข้าถึงข้อมูลพยากรณ์ชุดเดียวกันได้อย่างทั่วถึง
+        <ScaledText fontSize={11.5} style={[styles.footerNote, { color: theme.textMuted }]}>
+          {t('settingsFooter')}
         </ScaledText>
       </ScrollView>
 
-      {/* Floating liquid-glass tab bar (shared) */}
       <GlassTabBar active="profile" />
     </SafeAreaView>
   );
@@ -167,37 +192,35 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 104, paddingHorizontal: 16 },
+
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 4,
+    paddingTop: 14,
     paddingBottom: 10,
   },
-  headerSide: { width: 36, height: 36 },
   headerTitle: {
-    flex: 1,
-    fontSize: 17,
     fontFamily: FontFamily.display,
     fontWeight: '700',
-    textAlign: 'center',
   },
+
   sectionH: {
-    fontSize: 12.5,
     fontFamily: FontFamily.displaySemi,
     fontWeight: '600',
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    marginTop: 18,
+    marginTop: 20,
     marginBottom: 8,
     marginLeft: 4,
   },
+
   card: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
     marginBottom: 4,
   },
+
+  // ── Standard row (label left, control right) ──
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -206,52 +229,57 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     minHeight: 52,
   },
+  // ── Stacked row (label top, control full-width below) ──
+  rowStack: {
+    flexDirection: 'column',
+    gap: 10,
+    paddingVertical: 14,
+  },
+  stackRight: {
+    alignSelf: 'stretch',
+  },
+
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flexShrink: 1 },
   rowText: { flexShrink: 1 },
-  rowLabel: { fontSize: 14, fontFamily: FontFamily.bodyMedium },
-  rowSub: { fontSize: 11.5, fontFamily: FontFamily.body, marginTop: 1 },
+  rowLabel: { fontFamily: FontFamily.bodyMedium },
+  rowSub: { fontFamily: FontFamily.body, marginTop: 2 },
+
   segmented: {
     flexDirection: 'row',
     borderWidth: 1,
-    borderRadius: 9,
-    padding: 2,
+    borderRadius: 10,
+    padding: 3,
     gap: 2,
+    flexShrink: 0,
   },
   segment: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 7,
-    minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentText: { fontSize: 12, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
-  testBtn: {
-    borderWidth: 1.5,
-    borderRadius: 9,
+    flex: 1,
     paddingVertical: 7,
-    paddingHorizontal: 14,
-    minHeight: 36,
+    paddingHorizontal: 10,
+    borderRadius: 7,
+    minHeight: 34,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  testBtnText: { fontSize: 12.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  segmentText: { fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+
   aboutCard: { paddingVertical: 6 },
   aboutRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'flex-start',
     gap: 12,
-    paddingVertical: 9,
+    paddingVertical: 10,
+    flexWrap: 'wrap',
   },
-  aboutKey: { fontSize: 12.5, fontFamily: FontFamily.body },
-  aboutVal: { fontSize: 12.5, fontFamily: FontFamily.bodySemi, fontWeight: '600', textAlign: 'right', flexShrink: 1 },
-  aboutNote: { fontSize: 12, fontFamily: FontFamily.body, lineHeight: 20, paddingVertical: 10 },
+  aboutKey: { fontFamily: FontFamily.body, flexShrink: 0 },
+  aboutVal: { fontFamily: FontFamily.bodySemi, fontWeight: '600', textAlign: 'right', flexShrink: 1 },
+  aboutNote: { fontFamily: FontFamily.body, lineHeight: 19, paddingVertical: 10 },
+
   footerNote: {
-    fontSize: 11.5,
     fontFamily: FontFamily.body,
     textAlign: 'center',
-    marginTop: 18,
+    marginTop: 20,
     paddingHorizontal: 12,
     lineHeight: 18,
   },

@@ -118,6 +118,21 @@ export interface Translations {
   loadFailed: string;
   dataUnavailable: string;
 
+  // Settings sections & labels (bilingual)
+  sectionDisplay: string;
+  sectionAbout: string;
+  riskAlerts: string;
+  riskAlertsSub: string;
+  fontSizeSmall: string;
+  fontSizeMedium: string;
+  fontSizeLarge: string;
+  aboutModel: string;
+  aboutCoverage: string;
+  aboutSource: string;
+  aboutCoverageVal: string;
+  aboutHeatwaveDef: string;
+  settingsFooter: string;
+
   // Risk communication (colors = risk level, NOT a confirmed heatwave)
   riskWarning: string;
   riskWatch: string;
@@ -144,7 +159,7 @@ const en: Record<TranslationKey, string> = {
   navSettings: 'SETTINGS',
   
   // Settings Page
-  settingsTitle: 'Settings & Profile',
+  settingsTitle: 'Settings',
   profile: 'Profile',
   editProfile: 'EDIT PROFILE',
   appearance: 'APPEARANCE',
@@ -230,7 +245,7 @@ const en: Record<TranslationKey, string> = {
   asOf: 'As of',
   offlineData: 'Offline — showing bundled province list',
   provinceForecastTitle: 'Province forecast',
-  sevenDayForecast: '2–6 week outlook',
+  sevenDayForecast: '2–4 week outlook',
   weeklyOutlook: '5-Week Outlook',
   noForecastData: 'No forecast available for this province yet.',
 
@@ -244,6 +259,21 @@ const en: Record<TranslationKey, string> = {
   retry: 'Retry',
   loadFailed: "Couldn't load forecast",
   dataUnavailable: 'No data — tap to retry',
+
+  // Settings sections & labels
+  sectionDisplay: 'DISPLAY',
+  sectionAbout: 'ABOUT THE FORECAST',
+  riskAlerts: 'Risk Alerts',
+  riskAlertsSub: 'Notified when your area enters watch or warning level',
+  fontSizeSmall: 'S',
+  fontSizeMedium: 'M',
+  fontSizeLarge: 'L',
+  aboutModel: 'Model',
+  aboutCoverage: 'Coverage',
+  aboutSource: 'Data Source',
+  aboutCoverageVal: '77 provinces · 2–4 week forecast',
+  aboutHeatwaveDef: '"Heatwave" = daily Tmax above p90 of the same day over 30 yrs (1994–2023) for ≥3 consecutive days in a 7-day window — threshold computed per province per day of year',
+  settingsFooter: 'No account needed — everyone sees the same public forecast',
 
   // Risk communication
   riskWarning: 'Warning',
@@ -268,7 +298,7 @@ const th: Record<TranslationKey, string> = {
   navSettings: 'ตั้งค่า',
   
   // Settings Page
-  settingsTitle: 'การตั้งค่าและโปรไฟล์',
+  settingsTitle: 'ตั้งค่า',
   profile: 'โปรไฟล์',
   editProfile: 'แก้ไขโปรไฟล์',
   appearance: 'รูปลักษณ์',
@@ -354,7 +384,7 @@ const th: Record<TranslationKey, string> = {
   asOf: 'ข้อมูล ณ',
   offlineData: 'ออฟไลน์ — แสดงรายชื่อจังหวัดที่มากับแอป',
   provinceForecastTitle: 'พยากรณ์รายจังหวัด',
-  sevenDayForecast: 'แนวโน้ม 2–6 สัปดาห์',
+  sevenDayForecast: 'แนวโน้ม 2–4 สัปดาห์',
   weeklyOutlook: 'พยากรณ์ 5 สัปดาห์',
   noForecastData: 'ยังไม่มีพยากรณ์สำหรับจังหวัดนี้',
 
@@ -368,6 +398,21 @@ const th: Record<TranslationKey, string> = {
   retry: 'ลองใหม่',
   loadFailed: 'โหลดพยากรณ์ไม่สำเร็จ',
   dataUnavailable: 'ไม่มีข้อมูล — แตะเพื่อลองใหม่',
+
+  // Settings sections & labels
+  sectionDisplay: 'การแสดงผล',
+  sectionAbout: 'เกี่ยวกับระบบพยากรณ์',
+  riskAlerts: 'แจ้งเตือนความเสี่ยง',
+  riskAlertsSub: 'เตือนเมื่อพื้นที่ของคุณเข้าเกณฑ์เฝ้าระวัง/เตือนภัย',
+  fontSizeSmall: 'เล็ก',
+  fontSizeMedium: 'กลาง',
+  fontSizeLarge: 'ใหญ่',
+  aboutModel: 'โมเดล',
+  aboutCoverage: 'ครอบคลุม',
+  aboutSource: 'แหล่งข้อมูล',
+  aboutCoverageVal: '77 จังหวัด · พยากรณ์ล่วงหน้า 2–4 สัปดาห์',
+  aboutHeatwaveDef: '"คลื่นความร้อน" = Tmax รายวันเกิน p90 ของวันเดียวกันในรอบ 30 ปี (1994–2023) ติดกัน ≥3 วัน ภายใน 7 วัน — เกณฑ์คำนวณรายจังหวัดและรายวันในปฏิทิน',
+  settingsFooter: 'แอปนี้ไม่ต้องสมัครสมาชิก — ทุกคนเข้าถึงข้อมูลพยากรณ์ชุดเดียวกันได้อย่างทั่วถึง',
 
   // Risk communication
   riskWarning: 'เตือนภัย',
