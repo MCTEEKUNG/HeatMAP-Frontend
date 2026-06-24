@@ -1,9 +1,9 @@
-import { loadContract, mapPoints, provinceDays } from './deepseekContract';
+import { loadContract, mapPoints, mapPointsForWeek, provinceDays } from './deepseekContract';
 import type { Province } from './provincesService';
 import { getWeek1Map } from './openMeteoService';
 import type { HeatLevel } from '@/constants/heatRisk';
 import { levelFromRiskLevel } from '@/constants/heatRisk';
-import { formatTimestampBangkok } from '@/utils/bangkokTime';
+import { formatTimestampBangkok, weekRange } from '@/utils/bangkokTime';
 
 // ─── Per-province forecast (spec §7 / Phase 5) ────────────────────────────────
 
@@ -55,6 +55,8 @@ export interface MapForecastPoint {
   apparent_temp_c?: number;
   /** Pre-computed canonical heat level (0-4). Populated for Week 1; derived on-the-fly for Weeks 2-4. */
   heat_level?: HeatLevel;
+  /** Which pipeline produced this point — drives the live-forecast vs prediction notice. */
+  source?: 's2s' | 'open-meteo';
 }
 
 /** Fetch the 5-week outlook for a single province. */
@@ -69,8 +71,17 @@ export async function getForecastMap(leadWeeks: number = 2): Promise<MapForecast
 
 /**
  * Unified entry point for all 4 forecast weeks.
- *   week === 1  → Open-Meteo 7-day apparent temperature forecast
- *   week 2-4   → S2S model (existing getForecastMap)
+ *
+ * Selection is by TARGET DATE, not by a hardcoded lead-week bucket: each week's
+ * Bangkok-time date window (today-relative) is matched against the S2S forecasts'
+ * target_dates. Because the model's issue_date structurally lags real-time by
+ * ~3 weeks (it forecasts the latest feature-complete date, leads 2-6), an S2S
+ * target almost always lands in the current week — so Week 1 is normally served
+ * by the S2S model too.
+ *
+ * Open-Meteo is only a FALLBACK for Week 1, used in the rare case where the S2S
+ * data is fresh enough that no target reaches the current week. Weeks 2-4 beyond
+ * the model horizon return empty (UI shows "no forecast yet").
  *
  * This is the single branch point; map.tsx should call only this function.
  */
@@ -78,8 +89,14 @@ export async function getWeekData(
   week: 1 | 2 | 3 | 4,
   provinces: Province[],
 ): Promise<MapForecastPoint[]> {
-  if (week === 1) return getWeek1Map(provinces);
-  return getForecastMap(week);
+  const { startISO, endISO } = weekRange(week);
+  const contract = await loadContract();
+  const s2s = mapPointsForWeek(contract, startISO, endISO);
+  if (s2s.length > 0) return s2s;
+
+  // No S2S target lands in this week's window:
+  if (week === 1) return getWeek1Map(provinces); // rare live-forecast fallback
+  return []; // beyond the model's horizon
 }
 
 /**

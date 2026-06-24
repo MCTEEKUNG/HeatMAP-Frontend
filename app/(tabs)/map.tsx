@@ -235,24 +235,29 @@ export default function MapScreen() {
   const riskPct = dataReady && myProvincePoint && myProvincePoint.probability !== undefined
     ? Math.round((myProvincePoint.probability) * 100)
     : null;
-  const apparentTempC = dataReady && selectedWeek === 1 && myProvincePoint?.apparent_temp_c !== undefined
+  const apparentTempC = dataReady && myProvincePoint?.apparent_temp_c !== undefined
     ? myProvincePoint.apparent_temp_c
     : null;
 
+  // The data source actually used for this week (not the week number): S2S model
+  // normally, Open-Meteo only on the rare Week-1 live-forecast fallback.
+  const weekSource = (mapPoints[0]?.source ?? null) as 's2s' | 'open-meteo' | null;
+  const isLiveForecast = weekSource === 'open-meteo';
+
   // ── Status gauge (your area) — current value + the band it falls in ──────
-  // Week 1 reads peak apparent °C → heat_level; Weeks 2-4 read risk %  → band
-  // from risk_level. One block so value + band always describe the same point.
+  // Open-Meteo points carry apparent °C → heat_level; S2S points carry risk %
+  // → band from risk_level. Keyed on the point's fields, not the week number.
   const gaugeLevel: HeatLevel | null =
     !dataReady || !myProvincePoint
       ? null
-      : selectedWeek === 1
-        ? ((myProvincePoint.heat_level ?? 0) as HeatLevel)
+      : myProvincePoint.heat_level !== undefined
+        ? (myProvincePoint.heat_level as HeatLevel)
         : levelFromRiskLevel(myProvincePoint.risk_level);
   const gaugeValueText =
     apparentTempC !== null ? `${apparentTempC}°C`
     : riskPct !== null ? `${riskPct}%`
     : '';
-  const gaugeFootnote = selectedWeek === 1
+  const gaugeFootnote = isLiveForecast
     ? (language === 'th' ? 'อุณหภูมิสัมผัสสูงสุด · Open-Meteo' : 'Peak apparent temp · Open-Meteo')
     : (language === 'th' ? 'ความน่าจะเป็นความเสี่ยง · โมเดล S2S' : 'Risk probability · S2S model');
 
@@ -344,19 +349,23 @@ export default function MapScreen() {
             selectedWeek={selectedWeek}
             onSelect={setSelectedWeek}
           />
-          <View
-            style={[
-              styles.modeNotice,
-              { backgroundColor: selectedWeek === 1 ? modeInfoBg : modePredBg },
-            ]}
-            pointerEvents="none"
-          >
-            <ScaledText style={[styles.modeNoticeText, { color: selectedWeek === 1 ? modeInfoText : modePredText }]} numberOfLines={1}>
-              {selectedWeek === 1
-                ? (language === 'th' ? 'ⓘ สัปดาห์นี้ — พยากรณ์อากาศจริง ไม่ใช่การทำนายล่วงหน้า' : 'ⓘ This week — live forecast, not a prediction')
-                : (language === 'th' ? 'ⓘ การคาดการณ์ล่วงหน้าด้วยโมเดล S2S' : 'ⓘ Sub-seasonal prediction (S2S model)')}
-            </ScaledText>
-          </View>
+          {/* Source notice — only when real data is loaded, so it never
+              contradicts the "no forecast yet" state on out-of-horizon weeks. */}
+          {dataReady && weekSource && (
+            <View
+              style={[
+                styles.modeNotice,
+                { backgroundColor: isLiveForecast ? modeInfoBg : modePredBg },
+              ]}
+              pointerEvents="none"
+            >
+              <ScaledText style={[styles.modeNoticeText, { color: isLiveForecast ? modeInfoText : modePredText }]} numberOfLines={1}>
+                {isLiveForecast
+                  ? (language === 'th' ? 'ⓘ พยากรณ์อากาศจริง (Open-Meteo) — ไม่ใช่การทำนายโมเดล' : 'ⓘ Live weather forecast (Open-Meteo) — not a model prediction')
+                  : (language === 'th' ? 'ⓘ การคาดการณ์ล่วงหน้าด้วยโมเดล S2S' : 'ⓘ Sub-seasonal prediction (S2S model)')}
+              </ScaledText>
+            </View>
+          )}
         </View>
 
         {/* Load-state overlays — keep "no data" visually distinct from low risk */}

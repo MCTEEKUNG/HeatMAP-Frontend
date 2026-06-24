@@ -130,6 +130,7 @@ async function fetchWeek1(provinces: Province[]): Promise<MapForecastPoint[]> {
       // Week-1–specific extensions
       apparent_temp_c:       isNaN(peakTempC) ? undefined : Math.round(peakTempC * 10) / 10,
       heat_level:            heatLevel,
+      source:                'open-meteo',
     };
   });
 
