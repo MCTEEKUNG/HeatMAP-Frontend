@@ -45,3 +45,12 @@ app-example
 /ios
 /android
 .vercel
+
+# local dev / scratch artifacts (screenshots, typecheck dumps, tool state)
+/.playwright-mcp/
+/.superpowers/
+/tsc-out.txt
+/*.png
+# local-only preview/mockup pages (kept on disk, excluded from repo + deploy)
+/docs/mockup-option-b.html
+/public/s2s-accuracy.html
