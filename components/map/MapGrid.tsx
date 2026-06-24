@@ -17,7 +17,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
-import { RiskColors, type RiskLevel } from '@/constants/theme';
+import { type RiskLevel } from '@/constants/theme';
+import { colorForLevel, levelFromSeverity, levelFromRiskLevel } from '@/constants/heatRisk';
 
 // Calm Authority: desaturated CARTO basemaps (free; OSM data) so the only
 // saturated colour on screen is the risk layer itself.
@@ -170,29 +171,17 @@ export function generateThailandGrid(
   return cells;
 }
 
-// Hard-stop zone colours — NO gradient/blur (no alpha except low for visibility).
-// Thresholds match Rothfusz Heat Index breakpoints used in the model.
+// Zone colours — delegate to the canonical HeatRisk palette (constants/heatRisk.ts).
+// 'neutral' (no data / loading state) uses grey and is NOT routed through HeatRisk.
 export const getSeverityColor = (severity: Severity): string => {
-  switch (severity) {
-    case 'extreme':  return 'rgba(239, 68, 68, 0.85)';   // RED    — HI ≥ 41°C
-    case 'high':     return 'rgba(249, 115, 22, 0.80)';  // ORANGE — HI 35–40°C
-    case 'moderate': return 'rgba(234, 179, 8, 0.75)';   // YELLOW — HI 28–34°C
-    case 'low':      return 'rgba(34, 197, 94, 0.55)';   // GREEN  — HI < 28°C
-    case 'neutral':  return 'rgba(148, 163, 184, 0.35)'; // GREY   — no data / loading
-    default:         return 'transparent';
-  }
+  if (severity === 'neutral') return 'rgba(148, 163, 184, 0.35)';
+  return colorForLevel(levelFromSeverity(severity));
 };
 
-// Get border color for severity level
 export const getSeverityBorderColor = (severity: Severity): string => {
-  switch (severity) {
-    case 'extreme':  return 'rgba(239, 68, 68, 0.9)';
-    case 'high':     return 'rgba(249, 115, 22, 0.9)';
-    case 'moderate': return 'rgba(234, 179, 8, 0.9)';
-    case 'low':      return 'rgba(52, 197, 89, 0.7)';
-    case 'neutral':  return 'rgba(148, 163, 184, 0.55)'; // GREY — no data / loading
-    default:         return 'transparent';
-  }
+  if (severity === 'neutral') return 'rgba(148, 163, 184, 0.55)';
+  // Slightly darker (overlay hex with 90% opacity via appended alpha hex)
+  return colorForLevel(levelFromSeverity(severity)) + 'E6';
 };
 
 // Web Leaflet Map Component
@@ -341,16 +330,21 @@ function WebLeafletMap({
           style={(feature: any) => {
             const z = riskForFeatureName(feature?.properties?.name ?? '', provinceRisk!);
             if (z) {
-              if (z.level === 'normal') {
-                return { color: '#FFFFFF', weight: 1, fillColor: '#16a34a', fillOpacity: 0.34 };
-              }
-              if (z.level === 'low') {
-                return { color: '#FFFFFF', weight: 1, fillColor: '#64748b', fillOpacity: 0.25 };
-              }
-              if (z.level !== 'safe') {
-                return { color: '#FFFFFF', weight: 1, fillColor: RiskColors[z.level], fillOpacity: 0.34 };
-              }
+              // Route through the canonical HeatRisk palette.
+              // ChoroplethLevel → legacy RiskLevel string → HeatLevel → hex color.
+              // fillOpacity ~0.9 for discrete choropleth with white borders (research:
+              // high opacity needed so risk classes are distinguishable at a glance).
+              const rlMap: Record<string, Parameters<typeof levelFromRiskLevel>[0]> = {
+                warning: 'High',
+                watch:   'Elevated',
+                normal:  'Normal',
+                low:     'Low',
+              };
+              const rl = rlMap[z.level] ?? 'Low';
+              const fillColor = colorForLevel(levelFromRiskLevel(rl));
+              return { color: '#FFFFFF', weight: 1, fillColor, fillOpacity: 0.88 };
             }
+            // Province not in forecast data — render as faint grey (base-map visible)
             return { color: '#B3C4D2', weight: 0.6, fillColor: '#7E93A6', fillOpacity: 0.05 };
           }}
           onEachFeature={(feature: any, layer: any) => {

@@ -1,15 +1,19 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Colors, DesignTokens, GlassStyle, RiskBg, RiskColors, FontFamily, useResponsive } from '@/constants/theme';
+import { Colors, DesignTokens, GlassStyle, FontFamily, useResponsive } from '@/constants/theme';
+import { colorForLevel, levelFromRiskLevel, type HeatLevel } from '@/constants/heatRisk';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, generateThailandGrid, normalizeProvinceName, type GridCell, type Severity, type ProvinceRisk } from '@/components/map';
 import { useLocation } from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { getForecastMap, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint } from '@/services/forecastService';
+import { getWeekData, getAllWeekSummaries, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint } from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
+import { SummaryBar } from '@/components/map/SummaryBar';
+import { WeekSegmentedControl } from '@/components/map/WeekSegmentedControl';
+import { HeatLegend } from '@/components/map/HeatLegend';
 import { useRouter } from 'expo-router';
 import { guidanceFor } from '@/constants/riskGuidance';
 
@@ -78,8 +82,10 @@ export default function MapScreen() {
   // Ref so loadForecastMap (a useCallback) can access provinces without stale closure.
   const provincesRef = useRef<Province[]>([]);
 
-  // ── Week selector state (lead_weeks 2/3/4) ───────────────────────────────
-  const [selectedWeek, setSelectedWeek] = useState<2 | 3 | 4>(2);
+  // ── Week selector state (1 = Open-Meteo, 2-4 = S2S model) ──────────────
+  const [selectedWeek, setSelectedWeek] = useState<1 | 2 | 3 | 4>(1);
+  // National-worst HeatLevel per week — used to colour the risk dot in each pill.
+  const [weekSummaries, setWeekSummaries] = useState<Record<1|2|3|4, HeatLevel>>({ 1: 0, 2: 0, 3: 0, 4: 0 });
 
   useEffect(() => {
     let active = true;
@@ -98,6 +104,17 @@ export default function MapScreen() {
   // Keep provincesRef in sync so loadForecastMap can read it without a stale closure.
   useEffect(() => { provincesRef.current = provinces; }, [provinces]);
 
+  // Load per-week national-worst HeatLevel once provinces are available.
+  // These power the risk dots in the WeekSegmentedControl pills.
+  useEffect(() => {
+    if (provinces.length === 0) return;
+    let active = true;
+    getAllWeekSummaries(provinces).then((s) => {
+      if (active) setWeekSummaries(s);
+    }).catch(() => { /* keep defaults on error */ });
+    return () => { active = false; };
+  }, [provinces]);
+
   // Location hook — declared early so lat/lng are available for map positioning
   const {
     location: userLocation,
@@ -113,7 +130,7 @@ export default function MapScreen() {
   const loadForecastMap = useCallback(async () => {
     setStatus('loading');
     try {
-      const points = await getForecastMap(selectedWeek);
+      const points = await getWeekData(selectedWeek, provincesRef.current ?? []);
 
       if (!Array.isArray(points) || points.length === 0) {
         // Fetch succeeded but no forecast yet — grey grid + retry, not green
@@ -135,11 +152,13 @@ export default function MapScreen() {
         const lng = (cell.east  + cell.west)  / 2;
         const np = nearestPoint(lat, lng, points);
         if (!np) return cell;
+        // Use canonical level mapping — 'Normal' is now 'moderate' (was missing before).
         const severity: Severity =
           np.risk_level === 'High'     ? 'extreme'
           : np.risk_level === 'Elevated' ? 'high'
+          : np.risk_level === 'Normal'   ? 'moderate'
           : 'low';
-        // probability stored as 0–100 for the cell metadata
+        // probability is undefined for Week 1 (Open-Meteo has no probability output)
         const probability = Math.round((np.probability ?? 0) * 100);
         const prov = byId.get(np.province_id);
         const provinceName = prov ? normalizeProvinceName(prov.name_en) : undefined;
@@ -233,21 +252,24 @@ export default function MapScreen() {
     [myProvince, mapPoints],
   );
 
-  // Hero card — all three values (colour, label, probability) derive from the
+  // Hero card — all three values (colour, label, metric) derive from the
   // same myProvincePoint so they always describe the same province.
   const heroRiskLevel = dataReady ? (myProvincePoint?.risk_level ?? null) : null;
-  const heatColor =
-    heroRiskLevel === 'High'     ? RiskColors.warning
-    : heroRiskLevel === 'Elevated' ? RiskColors.watch
-    : heroRiskLevel === 'Normal'   ? RiskColors.safe
-    : dataReady                    ? RiskColors.safe
-    : theme.textSecondary;
+  // Use the canonical HeatRisk color for the hero metric text.
+  const heatColor = heroRiskLevel
+    ? colorForLevel(levelFromRiskLevel(heroRiskLevel))
+    : dataReady ? colorForLevel(0) : theme.textSecondary;
   const riskLabel =
     !dataReady
       ? (status === 'loading' ? t('loading') : t('dataUnavailable'))
       : myProvincePoint?.risk_level_th ?? t('lowRisk');
-  const riskPct = dataReady && myProvincePoint
-    ? Math.round((myProvincePoint.probability ?? 0) * 100)
+  // Week 1: show peak apparent temperature; Weeks 2-4: show probability %.
+  // Guard probability === undefined (Week 1 has no probability from Open-Meteo).
+  const riskPct = dataReady && myProvincePoint && myProvincePoint.probability !== undefined
+    ? Math.round((myProvincePoint.probability) * 100)
+    : null;
+  const apparentTempC = dataReady && selectedWeek === 1 && myProvincePoint?.apparent_temp_c !== undefined
+    ? myProvincePoint.apparent_temp_c
     : null;
 
   // Calculate responsive values
@@ -325,30 +347,13 @@ export default function MapScreen() {
           onSelectProvince={handleSelectProvince}
         />
 
-        {/* ── Week selector ─────────────────────────────────────────────────── */}
+        {/* ── Week segmented control (Week 1–4 with date ranges + risk dots) ── */}
         <View style={styles.weekSelectorRow} pointerEvents="auto">
-          {([2, 3, 4] as const).map((week) => (
-            <TouchableOpacity
-              key={week}
-              style={[
-                styles.weekBtn,
-                selectedWeek === week && { backgroundColor: theme.primary },
-                selectedWeek !== week && GlassStyle[isDarkMode ? 'dark' : 'light'],
-              ]}
-              onPress={() => setSelectedWeek(week)}
-              accessibilityRole="button"
-              accessibilityLabel={`สัปดาห์ที่ ${week}`}
-            >
-              <ScaledText
-                style={[
-                  styles.weekBtnText,
-                  { color: selectedWeek === week ? '#fff' : theme.textSecondary },
-                ]}
-              >
-                {language === 'th' ? `ส.${week}` : `Wk${week}`}
-              </ScaledText>
-            </TouchableOpacity>
-          ))}
+          <WeekSegmentedControl
+            selectedWeek={selectedWeek}
+            onSelect={setSelectedWeek}
+            weekSummaries={weekSummaries}
+          />
         </View>
 
         {/* Load-state overlays — keep "no data" visually distinct from low risk */}
@@ -398,38 +403,14 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* ── Floating top chips (Calm Authority: map is the hero) ── */}
+        {/* ── Summary bar — title + date range + national status chip ── */}
         <View style={styles.mapTop} pointerEvents="box-none">
-          <View style={[styles.heroPill, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
-            <ScaledText style={[styles.heroPillText, { color: theme.primary }]}>
-              แผนที่ความเสี่ยง · 77 จังหวัด
-            </ScaledText>
-          </View>
-          {status === 'ready' && (tierCounts.warn > 0 || tierCounts.watch > 0) && (
-            <View
-              style={[
-                styles.tierChip,
-                { backgroundColor: tierCounts.warn > 0 ? RiskBg.warning : RiskBg.watch },
-              ]}
-            >
-              <View
-                style={[
-                  styles.tierDot,
-                  { backgroundColor: tierCounts.warn > 0 ? RiskColors.warning : RiskColors.watch },
-                ]}
-              />
-              <ScaledText
-                style={[
-                  styles.tierChipText,
-                  { color: tierCounts.warn > 0 ? RiskColors.warning : RiskColors.watch },
-                ]}
-              >
-                {tierCounts.warn > 0
-                  ? `เตือนภัย ${tierCounts.warn} จว.`
-                  : `เฝ้าระวัง ${tierCounts.watch} จว.`}
-              </ScaledText>
-            </View>
-          )}
+          <SummaryBar
+            selectedWeek={selectedWeek}
+            watchCount={tierCounts.watch}
+            warnCount={tierCounts.warn}
+            dataReady={dataReady}
+          />
         </View>
 
         {/* Locate FAB — below the status overlay (top ~64+44=108), hugging right edge */}
@@ -459,11 +440,11 @@ export default function MapScreen() {
         {!selectedProvince && <View style={[styles.userCard, GlassStyle[isDarkMode ? 'dark' : 'light']]}>
           <View style={styles.ucLocRow}>
             <ScaledText style={[styles.ucLoc, { color: theme.textMuted }]}>
-              พื้นที่ของคุณ{myProvince ? ` · ${myProvince.name_th}` : ''}
+              {language === 'th' ? 'พื้นที่ของคุณ' : 'Your area'}{myProvince ? ` · ${myProvince.name_th}` : ''}
             </ScaledText>
             {status === 'ready' && mapGeneratedAt && (
               <ScaledText style={[styles.ucTs, { color: theme.textMuted }]}>
-                ข้อมูลเมื่อ {formatGeneratedAt(mapGeneratedAt)}
+                {language === 'th' ? 'ข้อมูลเมื่อ' : 'As of'} {formatGeneratedAt(mapGeneratedAt, language as 'th' | 'en')}
               </ScaledText>
             )}
           </View>
@@ -472,9 +453,15 @@ export default function MapScreen() {
             <ScaledText numberOfLines={1} style={[styles.ucRisk, { color: theme.text }]}>
               {riskLabel}
             </ScaledText>
-            {riskPct !== null && (
+            {/* Week 1: show peak apparent temperature. Weeks 2-4: show probability %. */}
+            {apparentTempC !== null && (
               <ScaledText style={[styles.ucPct, { color: heatColor }]}>
-                โอกาสเกิด {riskPct}%
+                {language === 'th' ? `สูงสุด ${apparentTempC}°C` : `Peak ${apparentTempC}°C`}
+              </ScaledText>
+            )}
+            {riskPct !== null && apparentTempC === null && (
+              <ScaledText style={[styles.ucPct, { color: heatColor }]}>
+                {language === 'th' ? `โอกาสเกิด ${riskPct}%` : `${riskPct}% risk`}
               </ScaledText>
             )}
           </View>
@@ -492,7 +479,7 @@ export default function MapScreen() {
               style={[styles.ucCta, { backgroundColor: alertTierColor(alertTierFromRiskLevel(myProvincePoint.risk_level), isDarkMode) + '22' }]}
               onPress={() => router.push({ pathname: '/safety' as any, params: { risk: myProvincePoint!.risk_level } })}
               accessibilityRole="button"
-              accessibilityLabel="ดูคู่มือความปลอดภัย"
+              accessibilityLabel={language === 'th' ? 'ดูคู่มือความปลอดภัย' : 'View safety guide'}
             >
               <ScaledText style={[styles.ucCtaText, { color: alertTierColor(alertTierFromRiskLevel(myProvincePoint.risk_level), isDarkMode) }]}>
                 {'▸ ' + (language === 'th' ? 'ดูวิธีรับมือ' : 'See safety guide')}
@@ -500,18 +487,9 @@ export default function MapScreen() {
             </TouchableOpacity>
           )}
 
-          <View style={[styles.miniLegend, { borderTopColor: theme.border }]}>
-            {([
-              [RiskColors.safe, 'ปกติ'],
-              [RiskColors.watch, 'เฝ้าระวัง'],
-              [RiskColors.warning, 'เตือนภัย'],
-              [RiskColors.extreme, 'อันตราย'],
-            ] as const).map(([c, lbl]) => (
-              <View key={lbl} style={styles.mlItem}>
-                <View style={[styles.mlDot, { backgroundColor: c }]} />
-                <ScaledText style={[styles.mlTxt, { color: theme.textMuted }]}>{lbl}</ScaledText>
-              </View>
-            ))}
+          {/* HeatRisk 5-level legend with metric footnote */}
+          <View style={[styles.legendWrapper, { borderTopColor: theme.border }]}>
+            <HeatLegend selectedWeek={selectedWeek} />
           </View>
         </View>}
       </View>
@@ -526,57 +504,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // ── Calm Authority hero overlays ──
+  // ── Summary bar + week selector overlays ──
   mapTop: {
     position: 'absolute',
     top: 14,
     left: 12,
     right: 12,
     zIndex: 30,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
   },
-  heroPill: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-  },
-  heroPillText: {
-    fontSize: 13,
-    fontFamily: FontFamily.display,
-    fontWeight: '700',
-  },
-  tierChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 5,
-    paddingHorizontal: 11,
-    borderRadius: 999,
-  },
-  tierDot: { width: 7, height: 7, borderRadius: 4 },
-  tierChipText: { fontSize: 11.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
   weekSelectorRow: {
     position: 'absolute',
-    top: 54,
+    top: 60,
     left: 12,
     right: 12,
     zIndex: 30,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  weekBtn: {
-    paddingVertical: 5,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-  },
-  weekBtnText: {
-    fontSize: 12,
-    fontFamily: FontFamily.bodySemi,
-    fontWeight: '600',
   },
   userCard: {
     position: 'absolute',
@@ -607,6 +548,12 @@ const styles = StyleSheet.create({
   ucGuidance: { fontSize: 11, fontFamily: FontFamily.body, marginTop: 3, lineHeight: 15 },
   ucCta: { marginTop: 4, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 7, alignSelf: 'flex-start' },
   ucCtaText: { fontSize: 11, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  legendWrapper: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+  },
+  // ── Legacy dead styles below (kept minimal for reference, safe to delete) ──
   ctaPrimary: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -618,18 +565,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   ctaPrimaryText: { color: '#FFFFFF', fontSize: 13.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
-  miniLegend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-    paddingTop: 6,
-    borderTopWidth: 1,
-  },
-  mlItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  mlDot: { width: 6, height: 6, borderRadius: 3 },
-  mlTxt: { fontSize: 10, fontFamily: FontFamily.body },
-  mlNote: { width: '100%', fontSize: 10, fontFamily: FontFamily.body, marginTop: 1 },
   topControls: {
     position: 'absolute',
     left: 24,

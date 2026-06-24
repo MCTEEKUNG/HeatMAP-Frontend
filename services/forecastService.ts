@@ -1,4 +1,9 @@
 import { loadContract, mapPoints, provinceDays } from './deepseekContract';
+import type { Province } from './provincesService';
+import { getWeek1Map } from './openMeteoService';
+import type { HeatLevel } from '@/constants/heatRisk';
+import { levelFromRiskLevel } from '@/constants/heatRisk';
+import { formatTimestampBangkok } from '@/utils/bangkokTime';
 
 // ─── Per-province forecast (spec §7 / Phase 5) ────────────────────────────────
 
@@ -24,15 +29,20 @@ export interface ProvinceForecastDay {
 
 /**
  * Latest forecast value for one province on the map.
- * Shape per spec §7:
- *   GET /api/forecast/map
- *   -> [{ province_id, lat, lon, probability, risk_level, target_date, generated_at }]
+ * Shape per spec §7 (Weeks 2-4, S2S model) or Open-Meteo (Week 1).
+ *
+ * Week 1 notes:
+ *   - `probability` is undefined (Open-Meteo has no probability output)
+ *   - `apparent_temp_c` carries the peak 7-day apparent temperature (°C)
+ *   - `heat_level` is the pre-computed canonical HeatLevel (0-4)
+ *   - `ratio_vs_normal` / `climatology_base_rate` are NaN for Week 1
  */
 export interface MapForecastPoint {
   province_id: number;
   lat: number;
   lon: number;
-  probability: number;
+  /** Calibrated probability 0-1 (Weeks 2-4 only; undefined for Week 1) */
+  probability?: number;
   risk_level: RiskLevel;
   risk_level_th: string;
   ratio_vs_normal: number;
@@ -41,6 +51,10 @@ export interface MapForecastPoint {
   generated_at: string;
   issue_date: string;
   model_version?: string;
+  /** Week 1 only: peak apparent temperature over the 7-day window (°C, from Open-Meteo) */
+  apparent_temp_c?: number;
+  /** Pre-computed canonical heat level (0-4). Populated for Week 1; derived on-the-fly for Weeks 2-4. */
+  heat_level?: HeatLevel;
 }
 
 /** Fetch the 5-week outlook for a single province. */
@@ -53,21 +67,69 @@ export async function getForecastMap(leadWeeks: number = 2): Promise<MapForecast
   return mapPoints(await loadContract(), leadWeeks);
 }
 
+/**
+ * Unified entry point for all 4 forecast weeks.
+ *   week === 1  → Open-Meteo 7-day apparent temperature forecast
+ *   week 2-4   → S2S model (existing getForecastMap)
+ *
+ * This is the single branch point; map.tsx should call only this function.
+ */
+export async function getWeekData(
+  week: 1 | 2 | 3 | 4,
+  provinces: Province[],
+): Promise<MapForecastPoint[]> {
+  if (week === 1) return getWeek1Map(provinces);
+  return getForecastMap(week);
+}
+
+/**
+ * Returns the national-worst HeatLevel for each of the 4 forecast weeks.
+ * Used to colour the risk dots on each week-selector pill.
+ *
+ * Weeks 2-4 are derived from a single loadContract() call (cached).
+ * Week 1 is derived from Open-Meteo (cached per Bangkok day).
+ * On error any week defaults to 0 (None) so the UI still renders.
+ */
+export async function getAllWeekSummaries(
+  provinces: Province[],
+): Promise<Record<1 | 2 | 3 | 4, HeatLevel>> {
+  const result: Record<1 | 2 | 3 | 4, HeatLevel> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+
+  // Weeks 2-4: one contract load, three passes
+  try {
+    const contract = await loadContract();
+    for (const week of [2, 3, 4] as const) {
+      const pts = mapPoints(contract, week);
+      result[week] = pts.reduce<HeatLevel>((best, pt) => {
+        const lv = levelFromRiskLevel(pt.risk_level);
+        return lv > best ? lv : best;
+      }, 0);
+    }
+  } catch { /* keep defaults */ }
+
+  // Week 1: Open-Meteo
+  try {
+    const pts = await getWeek1Map(provinces);
+    result[1] = pts.reduce<HeatLevel>((best, pt) => {
+      const lv = (pt.heat_level ?? 0) as HeatLevel;
+      return lv > best ? lv : best;
+    }, 0);
+  } catch { /* keep default */ }
+
+  return result;
+}
+
 
 /**
  * Format an ISO `generated_at` timestamp into a localized "as of" string.
+ * Pinned to Asia/Bangkok timezone and locale-aware (th/en).
  * Returns an empty string for missing/invalid input.
  */
-export function formatGeneratedAt(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+export function formatGeneratedAt(
+  iso: string | null | undefined,
+  lang: 'th' | 'en' = 'th',
+): string {
+  return formatTimestampBangkok(iso, lang);
 }
 
 

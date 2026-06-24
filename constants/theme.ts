@@ -130,6 +130,11 @@ export const RiskBg = {
 } as const;
 export type RiskLevel = keyof typeof RiskColors;
 
+// NWS HeatRisk 5-level colour tokens (used by map choropleth + legend)
+// Canonical palette — use constants/heatRisk.ts for logic; these are raw tokens only.
+export const HeatRiskColors = ['#DCEBD8', '#FCE33A', '#F39C2C', '#E5352B', '#9B1B9B'] as const;
+export const HeatRiskBg     = ['#EAF3EE', '#FEFAE1', '#FDF0DC', '#FAE3E1', '#F3E0F3'] as const;
+
 // Loaded font family names (registered in app/_layout.tsx via expo-google-fonts)
 export const FontFamily = {
   display: 'BaiJamjuree_700Bold',
@@ -399,6 +404,38 @@ export const GlassStyle = {
     ...(Platform.OS === 'web'
       ? ({ backdropFilter: 'blur(14px) saturate(160%)' } as any)
       : null),
+  },
+  // Opaque panel variant — for persistent legend & summary bar placed at screen edges
+  // (NOT over the coloured choropleth; higher opacity so it doesn't mute map colours)
+  panel: {
+    light: {
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: 'rgba(255, 255, 255, 0.9)',
+      borderWidth: 1,
+      borderRadius: 20,
+      shadowColor: '#10243A',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.18,
+      shadowRadius: 20,
+      elevation: 14,
+      ...(Platform.OS === 'web'
+        ? ({ backdropFilter: 'blur(20px) saturate(180%)' } as any)
+        : null),
+    },
+    dark: {
+      backgroundColor: 'rgba(12, 28, 46, 0.92)',
+      borderColor: 'rgba(255, 255, 255, 0.14)',
+      borderWidth: 1,
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 20,
+      elevation: 14,
+      ...(Platform.OS === 'web'
+        ? ({ backdropFilter: 'blur(20px) saturate(180%)' } as any)
+        : null),
+    },
   },
 };
 
