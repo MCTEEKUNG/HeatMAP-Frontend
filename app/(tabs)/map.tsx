@@ -360,7 +360,7 @@ export default function MapScreen() {
         {status === 'loading' && (
           <View
             pointerEvents="none"
-            style={[styles.statusOverlay, { top: 154 }]}
+            style={[styles.statusOverlay, { top: 166 }]}
           >
             <View
               style={[
@@ -379,7 +379,7 @@ export default function MapScreen() {
 
         {(status === 'error' || status === 'empty') && (
           <View
-            style={[styles.statusOverlay, { top: 154 }]}
+            style={[styles.statusOverlay, { top: 166 }]}
           >
             <View
               style={[
@@ -414,7 +414,7 @@ export default function MapScreen() {
         </View>
 
         {/* Locate FAB — below the status overlay (top ~64+44=108), hugging right edge */}
-        <View style={[styles.fabContainer, { right: 12, top: 154 }]}>
+        <View style={[styles.fabContainer, { right: 12, top: 166 }]}>
           <TouchableOpacity
             style={[
               styles.fab,
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   },
   weekSelectorRow: {
     position: 'absolute',
-    top: 74,
+    top: 86,
     left: 12,
     right: 12,
     zIndex: 30,

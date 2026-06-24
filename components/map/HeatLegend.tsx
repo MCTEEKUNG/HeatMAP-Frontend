@@ -1,20 +1,16 @@
 /**
- * HeatLegend — Persistent floating legend for the HeatRisk 5-level colour scale.
+ * HeatLegend — Compact horizontal legend for the HeatRisk 5-level colour scale.
  *
- * Displays all 5 risk levels with:
- *   - Colour swatch
- *   - Numeric badge (0-4) for colorblind safety
- *   - Thai/English label
- *   - Footnote disclosing the metric difference between Week 1 and Weeks 2-4
- *
- * Placed at the bottom of the map screen (inside the userCard area) so it never
- * overlaps the coloured province choropleth.
+ * A single continuous strip of 5 colour cells (each with its 0-4 number and a
+ * short label) reads as a "scale" at a glance and reclaims the ~300px the old
+ * 5-row stack consumed. Rendered inside the userCard glass panel, so it carries
+ * no glass of its own (avoids a double-blur).
  */
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { HEAT_LEVELS } from '@/constants/heatRisk';
-import { GlassStyle, FontFamily } from '@/constants/theme';
+import { FontFamily } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 
@@ -25,34 +21,40 @@ interface Props {
 
 export function HeatLegend({ selectedWeek }: Props) {
   const { isDarkMode, language } = useSettings();
-  const glass = GlassStyle.panel[isDarkMode ? 'dark' : 'light'];
   const textMuted = isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
-  const textColor = isDarkMode ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)';
+  const textColor = isDarkMode ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.72)';
 
   const footnote = selectedWeek === 1
     ? (language === 'th'
         ? 'Week 1: อุณหภูมิสัมผัสสูงสุด (Open-Meteo)'
-        : 'Week 1: peak apparent temperature (Open-Meteo)')
+        : 'Week 1: peak apparent temp (Open-Meteo)')
     : (language === 'th'
-        ? `Week ${selectedWeek}: ความน่าจะเป็นความเสี่ยง (โมเดล S2S)`
-        : `Week ${selectedWeek}: heatwave risk probability (S2S model)`);
+        ? `Week ${selectedWeek}: ความน่าจะเป็น (โมเดล S2S)`
+        : `Week ${selectedWeek}: risk probability (S2S model)`);
 
   return (
-    <View style={[styles.container, glass]}>
-      {/* Legend rows */}
-      <View style={styles.rows}>
-        {HEAT_LEVELS.map((d) => (
-          <View key={d.level} style={styles.row}>
-            {/* Colour swatch */}
-            <View style={[styles.swatch, { backgroundColor: d.color }]} />
-            {/* Numeric badge */}
-            <View style={[styles.badge, { backgroundColor: d.color + '33' }]}>
-              <ScaledText style={[styles.badgeText, { color: d.level >= 2 ? '#fff' : textColor }]}>
-                {d.level}
-              </ScaledText>
-            </View>
-            {/* Label */}
-            <ScaledText style={[styles.label, { color: textColor }]} numberOfLines={1}>
+    <View style={styles.container}>
+      {/* Continuous 5-cell colour strip */}
+      <View style={styles.strip}>
+        {HEAT_LEVELS.map((d, i) => (
+          <View
+            key={d.level}
+            style={[
+              styles.cell,
+              { backgroundColor: d.color },
+              i === 0 && styles.cellFirst,
+              i === HEAT_LEVELS.length - 1 && styles.cellLast,
+            ]}
+          >
+            <ScaledText
+              style={[styles.cellNum, { color: d.level >= 2 ? '#fff' : 'rgba(0,0,0,0.7)' }]}
+            >
+              {d.level}
+            </ScaledText>
+            <ScaledText
+              style={[styles.cellLabel, { color: d.level >= 2 ? '#fff' : 'rgba(0,0,0,0.7)' }]}
+              numberOfLines={1}
+            >
               {language === 'th' ? d.labelTh : d.labelEn}
             </ScaledText>
           </View>
@@ -60,7 +62,7 @@ export function HeatLegend({ selectedWeek }: Props) {
       </View>
 
       {/* Metric footnote */}
-      <ScaledText style={[styles.footnote, { color: textMuted }]} numberOfLines={2}>
+      <ScaledText style={[styles.footnote, { color: textMuted }]} numberOfLines={1}>
         {footnote}
       </ScaledText>
     </View>
@@ -69,44 +71,42 @@ export function HeatLegend({ selectedWeek }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 6,
-  },
-  rows: {
     gap: 5,
   },
-  row: {
+  strip: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  swatch: {
-    width: 14,
-    height: 14,
-    borderRadius: 4,
-  },
-  badge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+  cell: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 5,
+    gap: 1,
   },
-  badgeText: {
-    fontSize: 9,
+  cellFirst: {
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  cellLast: {
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  cellNum: {
+    fontSize: 11,
     fontFamily: FontFamily.bodySemi,
     fontWeight: '700',
+    lineHeight: 13,
   },
-  label: {
-    fontSize: 11,
+  cellLabel: {
+    fontSize: 8,
     fontFamily: FontFamily.bodyMedium,
-    flex: 1,
+    lineHeight: 10,
   },
   footnote: {
     fontSize: 9,
     fontFamily: FontFamily.body,
-    marginTop: 2,
-    lineHeight: 13,
+    lineHeight: 12,
   },
 });

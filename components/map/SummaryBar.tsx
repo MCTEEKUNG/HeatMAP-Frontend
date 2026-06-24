@@ -60,56 +60,59 @@ export function SummaryBar({ selectedWeek, watchCount, warnCount, dataReady }: P
 
   return (
     <View style={[styles.bar, glass]}>
-      <View style={styles.left}>
-        <ScaledText style={[styles.title, { color: primaryColor }]} numberOfLines={1}>
-          {title}
-        </ScaledText>
+      {/* Row 1: title gets the full width so it never truncates */}
+      <ScaledText style={[styles.title, { color: primaryColor }]} numberOfLines={1}>
+        {title}
+      </ScaledText>
+
+      {/* Row 2: date range on the left, danger chip on the right */}
+      <View style={styles.metaRow}>
         <ScaledText style={[styles.dateRange, { color: mutedColor }]} numberOfLines={1}>
           {dateRange}
         </ScaledText>
+        {dataReady && hasDanger && (
+          <View style={[styles.chip, { backgroundColor: chipColor + '22' }]}>
+            <View style={[styles.dot, { backgroundColor: chipColor }]} />
+            <ScaledText style={[styles.chipText, { color: chipColor }]} numberOfLines={1}>
+              {summaryText}
+            </ScaledText>
+          </View>
+        )}
       </View>
-
-      {dataReady && hasDanger && (
-        <View style={[styles.chip, { backgroundColor: chipColor + '22' }]}>
-          <View style={[styles.dot, { backgroundColor: chipColor }]} />
-          <ScaledText style={[styles.chipText, { color: chipColor }]} numberOfLines={1}>
-            {summaryText}
-          </ScaledText>
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   bar: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    gap: 3,
+  },
+  title: {
+    fontSize: 14,
+    fontFamily: FontFamily.display,
+    fontWeight: '700',
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    gap: 10,
-  },
-  left: {
-    flex: 1,
-    gap: 1,
-  },
-  title: {
-    fontSize: 13,
-    fontFamily: FontFamily.display,
-    fontWeight: '700',
+    gap: 8,
   },
   dateRange: {
     fontSize: 11,
     fontFamily: FontFamily.bodyMedium,
+    flexShrink: 0,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
     borderRadius: 999,
+    flexShrink: 1,
   },
   dot: {
     width: 6,

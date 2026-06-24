@@ -235,12 +235,18 @@ function WebLeafletMap({
 
     useEffect(() => {
       if (!map || !MapView?.L) return;
-      // Fit the full Thailand extent once the map is ready.
+      // Fit the full Thailand extent once the map is ready. Pad asymmetrically
+      // so the country sits in the clear band BETWEEN the floating cards: the
+      // week-selector stack covers ~150px up top, the "your area" card ~210px at
+      // the bottom. Uniform padding would tuck Thailand's north/south under them.
       const bounds = MapView.L.latLngBounds(
         [THAILAND_BOUNDS.south, THAILAND_BOUNDS.west],
         [THAILAND_BOUNDS.north, THAILAND_BOUNDS.east],
       );
-      map.fitBounds(bounds, { padding: [12, 12] });
+      map.fitBounds(bounds, {
+        paddingTopLeft: [16, 150],
+        paddingBottomRight: [16, 210],
+      });
     }, [map]);
 
     return null;
