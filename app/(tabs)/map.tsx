@@ -13,7 +13,7 @@ import { getWeekData, getProvinceOutlook, formatGeneratedAt, alertTierFromRiskLe
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
 import { WeekSegmentedControl } from '@/components/map/WeekSegmentedControl';
-import { OutlookChart } from '@/components/map/OutlookChart';
+import { OutlookSummary } from '@/components/map/OutlookSummary';
 import { ModelBadge } from '@/components/map/ModelBadge';
 import { RiskGauge } from '@/components/map/RiskGauge';
 import { useRouter } from 'expo-router';
@@ -50,7 +50,9 @@ export default function MapScreen() {
   const [selectedProvince, setSelectedProvince] = useState<Province | null>(null);
   const provincesRef = useRef<Province[]>([]);
 
-  const [selectedWeek, setSelectedWeek] = useState<1 | 2 | 3 | 4>(1);
+  // Default to the first S2S forecast week — the hero leads with the model's
+  // outlook (weeks 2-4), not the current week.
+  const [selectedWeek, setSelectedWeek] = useState<1 | 2 | 3 | 4>(2);
   const [outlook, setOutlook] = useState<OutlookPoint[]>([]);
   const [mapExpanded, setMapExpanded] = useState(false);
 
@@ -285,13 +287,10 @@ export default function MapScreen() {
           {asOf ? `  ·  ${th ? 'ข้อมูล ณ' : 'as of'} ${asOf}` : ''}
         </ScaledText>
 
-        {/* HERO — 4-week outlook chart */}
+        {/* HERO — forecast-first outlook (weeks 2-4 = S2S model) */}
         <View style={[styles.card, glass]}>
-          <ScaledText style={[styles.cardTitle, { color: theme.text }]}>
-            {th ? 'แนวโน้ม 4 สัปดาห์ข้างหน้า' : 'Next 4 weeks'}
-          </ScaledText>
           {outlook.length > 0 ? (
-            <OutlookChart weeks={outlook} selectedWeek={selectedWeek} onSelect={setSelectedWeek} />
+            <OutlookSummary weeks={outlook} selectedWeek={selectedWeek} onSelect={setSelectedWeek} />
           ) : (
             <View style={styles.chartLoading}><ActivityIndicator color={theme.primary} /></View>
           )}
