@@ -8,7 +8,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, generateThailandGrid, normalizeProvinceName, type GridCell, type Severity, type ProvinceRisk } from '@/components/map';
 import { useLocation } from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { getWeekData, getAllWeekSummaries, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint } from '@/services/forecastService';
+import { getWeekData, getAllWeekSummaries, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint, type WeekRiskSummary } from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
 import { SummaryBar } from '@/components/map/SummaryBar';
@@ -84,8 +84,12 @@ export default function MapScreen() {
 
   // ── Week selector state (1 = Open-Meteo, 2-4 = S2S model) ──────────────
   const [selectedWeek, setSelectedWeek] = useState<1 | 2 | 3 | 4>(1);
-  // National-worst HeatLevel per week — used to colour the risk dot in each pill.
-  const [weekSummaries, setWeekSummaries] = useState<Record<1|2|3|4, HeatLevel>>({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  // National risk distribution per week — powers the stacked bar + high-risk
+  // count on each week-selector pill.
+  const emptySummary: WeekRiskSummary = { counts: [0, 0, 0, 0, 0], worst: 0, highRiskCount: 0, total: 0 };
+  const [weekSummaries, setWeekSummaries] = useState<Record<1|2|3|4, WeekRiskSummary>>({
+    1: emptySummary, 2: emptySummary, 3: emptySummary, 4: emptySummary,
+  });
 
   useEffect(() => {
     let active = true;

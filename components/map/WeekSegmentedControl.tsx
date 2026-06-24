@@ -1,26 +1,20 @@
 /**
- * WeekSegmentedControl — 4-pill animated segmented control (Apple HIG style).
+ * WeekSegmentedControl — 4-pill segmented control (Apple HIG style).
  *
  * Each pill shows:
  *   - Week label ("สัปดาห์ 1" / "Week 1")
  *   - Calendar date range in Bangkok time
- *   - Coloured risk dot from weekSummaries (mini-forecast in the selector)
- *   - Numeric badge on the dot for colorblind accessibility
- *
- * The active highlight animates between pills using react-native-reanimated.
+ *   - A tiny stacked bar of the national risk distribution for that week
+ *     (provinces per HeatLevel) — this varies week-to-week, unlike a single
+ *     worst-level dot which saturated at the same value every week.
+ *   - The count of high-risk provinces (Major+Extreme), coloured by worst level.
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-import { GlassStyle, FontFamily } from '@/constants/theme';
+import { FontFamily, HeatRiskColors } from '@/constants/theme';
 import { colorForLevel } from '@/constants/heatRisk';
-import type { HeatLevel } from '@/constants/heatRisk';
+import type { WeekRiskSummary } from '@/services/forecastService';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { formatWeekRange } from '@/utils/bangkokTime';
@@ -28,24 +22,39 @@ import { formatWeekRange } from '@/utils/bangkokTime';
 interface Props {
   selectedWeek: 1 | 2 | 3 | 4;
   onSelect: (week: 1 | 2 | 3 | 4) => void;
-  /** National-worst heat level per week (for the risk dot). Falls back to 0 if loading. */
-  weekSummaries?: Partial<Record<1 | 2 | 3 | 4, HeatLevel>>;
+  /** National risk distribution per week (for the stacked bar + count). */
+  weekSummaries?: Partial<Record<1 | 2 | 3 | 4, WeekRiskSummary>>;
 }
 
 const WEEKS = [1, 2, 3, 4] as const;
+const EMPTY: WeekRiskSummary = { counts: [0, 0, 0, 0, 0], worst: 0, highRiskCount: 0, total: 0 };
+
+/** Tiny horizontal stacked bar: one segment per HeatLevel, width ∝ province count. */
+function RiskBar({ counts, total, dim }: { counts: number[]; total: number; dim: boolean }) {
+  if (total === 0) {
+    return <View style={[styles.bar, styles.barEmpty, dim && styles.barEmptyDim]} />;
+  }
+  return (
+    <View style={styles.bar}>
+      {counts.map((c, level) =>
+        c > 0 ? (
+          <View
+            key={level}
+            style={{
+              flex: c,
+              backgroundColor: HeatRiskColors[level],
+              opacity: dim ? 0.85 : 1,
+            }}
+          />
+        ) : null,
+      )}
+    </View>
+  );
+}
 
 export function WeekSegmentedControl({ selectedWeek, onSelect, weekSummaries = {} }: Props) {
   const { isDarkMode, language } = useSettings();
   const lang = language as 'th' | 'en';
-
-  // Animate the active pill indicator position (0-3 for weeks 1-4)
-  const activeIndex = useSharedValue(selectedWeek - 1);
-  useEffect(() => {
-    activeIndex.value = withTiming(selectedWeek - 1, {
-      duration: 220,
-      easing: Easing.out(Easing.quad),
-    });
-  }, [selectedWeek, activeIndex]);
 
   const bgColor     = isDarkMode ? 'rgba(16, 36, 58, 0.78)' : 'rgba(255,255,255,0.85)';
   const activeColor = isDarkMode ? '#7FA3C8' : '#16324F';
@@ -68,19 +77,31 @@ export function WeekSegmentedControl({ selectedWeek, onSelect, weekSummaries = {
     >
       {WEEKS.map((week) => {
         const isActive  = week === selectedWeek;
-        const level     = (weekSummaries[week] ?? 0) as HeatLevel;
-        const dotColor  = colorForLevel(level);
+        const summary   = weekSummaries[week] ?? EMPTY;
         const dateRange = formatWeekRange(week, lang);
         const weekLabel = lang === 'th' ? `สัปดาห์ ${week}` : `Week ${week}`;
+        // High-risk count is the headline signal; colour it by the worst level.
+        const countColor = summary.highRiskCount > 0
+          ? colorForLevel(summary.worst)
+          : (isActive ? 'rgba(255,255,255,0.6)' : textIdle);
+        const countText = summary.total === 0
+          ? '—'
+          : summary.highRiskCount > 0
+            ? (lang === 'th' ? `${summary.highRiskCount} เสี่ยงสูง` : `${summary.highRiskCount} high`)
+            : (lang === 'th' ? 'ปกติ' : 'normal');
 
         return (
           <TouchableOpacity
             key={week}
-            style={[styles.pill, isActive && [styles.pillActive, { backgroundColor: activeColor }]]}
+            style={[styles.pill, isActive && { backgroundColor: activeColor }]}
             onPress={() => onSelect(week)}
             activeOpacity={0.75}
             accessibilityRole="button"
-            accessibilityLabel={`${weekLabel} ${dateRange}`}
+            accessibilityLabel={
+              lang === 'th'
+                ? `${weekLabel} ${dateRange} ${summary.highRiskCount} จังหวัดเสี่ยงสูง`
+                : `${weekLabel} ${dateRange}, ${summary.highRiskCount} high-risk provinces`
+            }
             accessibilityState={{ selected: isActive }}
           >
             {/* Week label */}
@@ -99,13 +120,13 @@ export function WeekSegmentedControl({ selectedWeek, onSelect, weekSummaries = {
               {dateRange}
             </ScaledText>
 
-            {/* Risk dot + badge */}
-            <View style={styles.dotRow}>
-              <View style={[styles.dot, { backgroundColor: dotColor }]} />
-              <ScaledText style={[styles.dotBadge, { color: dotColor }]}>
-                {level}
-              </ScaledText>
-            </View>
+            {/* Stacked risk distribution bar */}
+            <RiskBar counts={summary.counts} total={summary.total} dim={isActive} />
+
+            {/* High-risk province count */}
+            <ScaledText style={[styles.count, { color: countColor }]} numberOfLines={1}>
+              {countText}
+            </ScaledText>
           </TouchableOpacity>
         );
       })}
@@ -125,12 +146,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 7,
-    paddingHorizontal: 4,
+    paddingHorizontal: 5,
     borderRadius: 12,
-    gap: 2,
-  },
-  pillActive: {
-    // backgroundColor set inline via activeColor
+    gap: 3,
   },
   weekLabel: {
     fontSize: 11,
@@ -141,19 +159,22 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: FontFamily.body,
   },
-  dotRow: {
+  bar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 2,
+    alignSelf: 'stretch',
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginTop: 1,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  barEmpty: {
+    backgroundColor: 'rgba(148,163,184,0.35)',
   },
-  dotBadge: {
-    fontSize: 8,
+  barEmptyDim: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  count: {
+    fontSize: 8.5,
     fontFamily: FontFamily.bodySemi,
     fontWeight: '700',
   },

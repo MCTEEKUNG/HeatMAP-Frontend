@@ -83,37 +83,65 @@ export async function getWeekData(
 }
 
 /**
- * Returns the national-worst HeatLevel for each of the 4 forecast weeks.
- * Used to colour the risk dots on each week-selector pill.
+ * Per-week national risk summary used to render the week-selector pills.
+ * The full distribution (provinces per HeatLevel) lets each pill show a tiny
+ * stacked bar — far more meaningful than a single worst-level dot, which
+ * saturates at the same value every week.
+ */
+export interface WeekRiskSummary {
+  /** Province count per HeatLevel, indexed 0-4. Length 5. */
+  counts: number[];
+  /** Highest level present (count > 0). */
+  worst: HeatLevel;
+  /** Provinces at Major+Extreme (level >= 3) — the "how widespread" signal. */
+  highRiskCount: number;
+  /** Total provinces with a reading. */
+  total: number;
+}
+
+/** Build a WeekRiskSummary from a flat list of HeatLevels. */
+function summariseLevels(levels: HeatLevel[]): WeekRiskSummary {
+  const counts = [0, 0, 0, 0, 0];
+  let worst: HeatLevel = 0;
+  let highRiskCount = 0;
+  for (const lv of levels) {
+    counts[lv] += 1;
+    if (lv > worst) worst = lv;
+    if (lv >= 3) highRiskCount += 1;
+  }
+  return { counts, worst, highRiskCount, total: levels.length };
+}
+
+const EMPTY_SUMMARY: WeekRiskSummary = { counts: [0, 0, 0, 0, 0], worst: 0, highRiskCount: 0, total: 0 };
+
+/**
+ * Returns the national risk distribution for each of the 4 forecast weeks.
+ * Used to render the stacked-bar + high-risk count on each week-selector pill.
  *
  * Weeks 2-4 are derived from a single loadContract() call (cached).
  * Week 1 is derived from Open-Meteo (cached per Bangkok day).
- * On error any week defaults to 0 (None) so the UI still renders.
+ * On error any week defaults to an empty summary so the UI still renders.
  */
 export async function getAllWeekSummaries(
   provinces: Province[],
-): Promise<Record<1 | 2 | 3 | 4, HeatLevel>> {
-  const result: Record<1 | 2 | 3 | 4, HeatLevel> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+): Promise<Record<1 | 2 | 3 | 4, WeekRiskSummary>> {
+  const result: Record<1 | 2 | 3 | 4, WeekRiskSummary> = {
+    1: EMPTY_SUMMARY, 2: EMPTY_SUMMARY, 3: EMPTY_SUMMARY, 4: EMPTY_SUMMARY,
+  };
 
   // Weeks 2-4: one contract load, three passes
   try {
     const contract = await loadContract();
     for (const week of [2, 3, 4] as const) {
       const pts = mapPoints(contract, week);
-      result[week] = pts.reduce<HeatLevel>((best, pt) => {
-        const lv = levelFromRiskLevel(pt.risk_level);
-        return lv > best ? lv : best;
-      }, 0);
+      result[week] = summariseLevels(pts.map((pt) => levelFromRiskLevel(pt.risk_level)));
     }
   } catch { /* keep defaults */ }
 
   // Week 1: Open-Meteo
   try {
     const pts = await getWeek1Map(provinces);
-    result[1] = pts.reduce<HeatLevel>((best, pt) => {
-      const lv = (pt.heat_level ?? 0) as HeatLevel;
-      return lv > best ? lv : best;
-    }, 0);
+    result[1] = summariseLevels(pts.map((pt) => (pt.heat_level ?? 0) as HeatLevel));
   } catch { /* keep default */ }
 
   return result;
