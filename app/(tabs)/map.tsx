@@ -1,19 +1,19 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Colors, DesignTokens, GlassStyle, FontFamily, useResponsive } from '@/constants/theme';
-import { colorForLevel, levelFromRiskLevel, type HeatLevel } from '@/constants/heatRisk';
+import { levelFromRiskLevel, type HeatLevel } from '@/constants/heatRisk';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, generateThailandGrid, normalizeProvinceName, type GridCell, type Severity, type ProvinceRisk } from '@/components/map';
 import { useLocation } from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { getWeekData, getAllWeekSummaries, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint, type WeekRiskSummary } from '@/services/forecastService';
+import { getWeekData, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint } from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
 import { SummaryBar } from '@/components/map/SummaryBar';
 import { WeekSegmentedControl } from '@/components/map/WeekSegmentedControl';
-import { HeatLegend } from '@/components/map/HeatLegend';
+import { RiskGauge } from '@/components/map/RiskGauge';
 import { useRouter } from 'expo-router';
 import { guidanceFor } from '@/constants/riskGuidance';
 
@@ -84,12 +84,6 @@ export default function MapScreen() {
 
   // ── Week selector state (1 = Open-Meteo, 2-4 = S2S model) ──────────────
   const [selectedWeek, setSelectedWeek] = useState<1 | 2 | 3 | 4>(1);
-  // National risk distribution per week — powers the stacked bar + high-risk
-  // count on each week-selector pill.
-  const emptySummary: WeekRiskSummary = { counts: [0, 0, 0, 0, 0], worst: 0, highRiskCount: 0, total: 0 };
-  const [weekSummaries, setWeekSummaries] = useState<Record<1|2|3|4, WeekRiskSummary>>({
-    1: emptySummary, 2: emptySummary, 3: emptySummary, 4: emptySummary,
-  });
 
   useEffect(() => {
     let active = true;
@@ -107,17 +101,6 @@ export default function MapScreen() {
 
   // Keep provincesRef in sync so loadForecastMap can read it without a stale closure.
   useEffect(() => { provincesRef.current = provinces; }, [provinces]);
-
-  // Load per-week national-worst HeatLevel once provinces are available.
-  // These power the risk dots in the WeekSegmentedControl pills.
-  useEffect(() => {
-    if (provinces.length === 0) return;
-    let active = true;
-    getAllWeekSummaries(provinces).then((s) => {
-      if (active) setWeekSummaries(s);
-    }).catch(() => { /* keep defaults on error */ });
-    return () => { active = false; };
-  }, [provinces]);
 
   // Location hook — declared early so lat/lng are available for map positioning
   const {
@@ -258,11 +241,6 @@ export default function MapScreen() {
 
   // Hero card — all three values (colour, label, metric) derive from the
   // same myProvincePoint so they always describe the same province.
-  const heroRiskLevel = dataReady ? (myProvincePoint?.risk_level ?? null) : null;
-  // Use the canonical HeatRisk color for the hero metric text.
-  const heatColor = heroRiskLevel
-    ? colorForLevel(levelFromRiskLevel(heroRiskLevel))
-    : dataReady ? colorForLevel(0) : theme.textSecondary;
   const riskLabel =
     !dataReady
       ? (status === 'loading' ? t('loading') : t('dataUnavailable'))
@@ -275,6 +253,23 @@ export default function MapScreen() {
   const apparentTempC = dataReady && selectedWeek === 1 && myProvincePoint?.apparent_temp_c !== undefined
     ? myProvincePoint.apparent_temp_c
     : null;
+
+  // ── Status gauge (your area) — current value + the band it falls in ──────
+  // Week 1 reads peak apparent °C → heat_level; Weeks 2-4 read risk %  → band
+  // from risk_level. One block so value + band always describe the same point.
+  const gaugeLevel: HeatLevel | null =
+    !dataReady || !myProvincePoint
+      ? null
+      : selectedWeek === 1
+        ? ((myProvincePoint.heat_level ?? 0) as HeatLevel)
+        : levelFromRiskLevel(myProvincePoint.risk_level);
+  const gaugeValueText =
+    apparentTempC !== null ? `${apparentTempC}°C`
+    : riskPct !== null ? `${riskPct}%`
+    : '';
+  const gaugeFootnote = selectedWeek === 1
+    ? (language === 'th' ? 'อุณหภูมิสัมผัสสูงสุด · Open-Meteo' : 'Peak apparent temp · Open-Meteo')
+    : (language === 'th' ? 'ความน่าจะเป็นความเสี่ยง · โมเดล S2S' : 'Risk probability · S2S model');
 
   // Calculate responsive values
 
@@ -356,7 +351,6 @@ export default function MapScreen() {
           <WeekSegmentedControl
             selectedWeek={selectedWeek}
             onSelect={setSelectedWeek}
-            weekSummaries={weekSummaries}
           />
         </View>
 
@@ -453,22 +447,17 @@ export default function MapScreen() {
             )}
           </View>
 
-          <View style={styles.ucRow}>
-            <ScaledText numberOfLines={1} style={[styles.ucRisk, { color: theme.text }]}>
+          {/* Current-status gauge: the value + the band it falls in.
+              Falls back to a muted status line while data isn't ready. */}
+          {gaugeLevel !== null ? (
+            <View style={styles.gaugeWrapper}>
+              <RiskGauge level={gaugeLevel} valueText={gaugeValueText} footnote={gaugeFootnote} />
+            </View>
+          ) : (
+            <ScaledText numberOfLines={1} style={[styles.ucRisk, { color: theme.textMuted }]}>
               {riskLabel}
             </ScaledText>
-            {/* Week 1: show peak apparent temperature. Weeks 2-4: show probability %. */}
-            {apparentTempC !== null && (
-              <ScaledText style={[styles.ucPct, { color: heatColor }]}>
-                {language === 'th' ? `สูงสุด ${apparentTempC}°C` : `Peak ${apparentTempC}°C`}
-              </ScaledText>
-            )}
-            {riskPct !== null && apparentTempC === null && (
-              <ScaledText style={[styles.ucPct, { color: heatColor }]}>
-                {language === 'th' ? `โอกาสเกิด ${riskPct}%` : `${riskPct}% risk`}
-              </ScaledText>
-            )}
-          </View>
+          )}
 
           {/* Plain-language "what's happening" guidance line */}
           {dataReady && myProvincePoint && (
@@ -490,11 +479,6 @@ export default function MapScreen() {
               </ScaledText>
             </TouchableOpacity>
           )}
-
-          {/* HeatRisk 5-level legend with metric footnote */}
-          <View style={[styles.legendWrapper, { borderTopColor: theme.border }]}>
-            <HeatLegend selectedWeek={selectedWeek} />
-          </View>
         </View>}
       </View>
 
@@ -529,8 +513,12 @@ const styles = StyleSheet.create({
     right: 12,
     bottom: 92,
     zIndex: 30,
-    borderRadius: 14,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
+    gap: 8,
+  },
+  gaugeWrapper: {
+    marginTop: 2,
   },
   ucLocRow: {
     flexDirection: 'row',
