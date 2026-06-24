@@ -226,16 +226,23 @@ function WebLeafletMap({
     });
   }, []);
 
-  // Component to handle map ref and user location
-  const MapController = ({ userLoc }: { userLoc: { latitude: number; longitude: number } | null }) => {
+  // Keep the hero map framed on the whole country so risk colours are readable
+  // at a glance. We deliberately DON'T snap-zoom to the user's GPS fix (that
+  // zoomed to street-level ocean and pushed every province polygon off-screen);
+  // the user's position is still shown via the pulsing marker on the country map.
+  const MapController = ({ userLoc: _userLoc }: { userLoc: { latitude: number; longitude: number } | null }) => {
     const map = MapView?.useMap();
-    
+
     useEffect(() => {
-      if (map && userLoc) {
-        map.setView([userLoc.latitude, userLoc.longitude], 13);
-      }
-    }, [userLoc, map]);
-    
+      if (!map || !MapView?.L) return;
+      // Fit the full Thailand extent once the map is ready.
+      const bounds = MapView.L.latLngBounds(
+        [THAILAND_BOUNDS.south, THAILAND_BOUNDS.west],
+        [THAILAND_BOUNDS.north, THAILAND_BOUNDS.east],
+      );
+      map.fitBounds(bounds, { padding: [12, 12] });
+    }, [map]);
+
     return null;
   };
 
