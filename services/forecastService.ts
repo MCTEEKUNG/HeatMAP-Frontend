@@ -95,8 +95,99 @@ export async function getWeekData(
   if (s2s.length > 0) return s2s;
 
   // No S2S target lands in this week's window:
-  if (week === 1) return getWeek1Map(provinces); // rare live-forecast fallback
+  if (week === 1) {
+    // Defensive: never call Open-Meteo with an empty province list (the cold-load
+    // race produced a latitude=&longitude= request that returned no data).
+    if (!provinces || provinces.length === 0) return [];
+    return getWeek1Map(provinces); // rare live-forecast fallback
+  }
   return []; // beyond the model's horizon
+}
+
+/**
+ * One point of the user's-province 4-week outlook (drives the OutlookChart).
+ * `level` is the canonical HeatRisk level (0-4) used both for the dot colour and
+ * the chart height, so live (°C) and S2S (%) weeks share one consistent axis;
+ * the raw value is carried as a display string only.
+ */
+export interface OutlookPoint {
+  week: 1 | 2 | 3 | 4;
+  startISO: string;
+  endISO: string;
+  level: HeatLevel;
+  /** Display value, already formatted: "37.7°C" (live) or "28%" (S2S). '' if N/A. */
+  valueText: string;
+  source: 's2s' | 'open-meteo' | null;
+  /** false when this week is beyond the model horizon / has no point for the province. */
+  available: boolean;
+}
+
+/**
+ * Build the 4-week outlook for ONE province (the user's area).
+ * Reuses cached loads — one contract load + one Open-Meteo batch — so this is a
+ * single round of work, not four. Weeks with no data (beyond horizon) come back
+ * with available=false so the chart can render them muted.
+ */
+export async function getProvinceOutlook(
+  provinceId: number,
+  provinces: Province[],
+): Promise<OutlookPoint[]> {
+  const out: OutlookPoint[] = [];
+  for (const week of [1, 2, 3, 4] as const) {
+    const { startISO, endISO } = weekRange(week);
+    let pt: MapForecastPoint | undefined;
+    try {
+      const pts = await getWeekData(week, provinces);
+      pt = pts.find((p) => p.province_id === provinceId);
+    } catch {
+      pt = undefined;
+    }
+    if (!pt) {
+      out.push({ week, startISO, endISO, level: 0, valueText: '', source: null, available: false });
+      continue;
+    }
+    const level = (pt.heat_level !== undefined
+      ? pt.heat_level
+      : levelFromRiskLevel(pt.risk_level)) as HeatLevel;
+    const valueText =
+      pt.apparent_temp_c !== undefined ? `${pt.apparent_temp_c}°C`
+      : pt.probability !== undefined ? `${Math.round(pt.probability * 100)}%`
+      : '';
+    out.push({ week, startISO, endISO, level, valueText, source: pt.source ?? null, available: true });
+  }
+  return out;
+}
+
+/**
+ * Fetch the model verification / track-record dataset (published next to the
+ * forecast contract). Returns null on 404 / parse error so the accuracy screen
+ * can show an honest "building" state instead of failing.
+ */
+export async function loadVerification(): Promise<VerificationData | null> {
+  const forecastUrl = process.env.EXPO_PUBLIC_FORECAST_URL || '/forecast_provinces.json';
+  const url = process.env.EXPO_PUBLIC_VERIFICATION_URL
+    || forecastUrl.replace(/forecast_provinces\.json$/, 'verification.json');
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return (await res.json()) as VerificationData;
+  } catch {
+    return null;
+  }
+}
+
+/** Shape of verification.json (published by the backend verify scripts; phase 1.5). */
+export interface VerificationData {
+  generated_at?: string;
+  period?: { start: string; end: string; weeks: number };
+  /** Brier Skill Score vs climatology baseline (>0 = real skill). */
+  bss?: number;
+  /** Per-week outcome track record (most recent last). */
+  weeks?: { target_date: string; outcome: 'hit' | 'near' | 'miss' }[];
+  /** Per-lead skill (BSS) keyed by lead_weeks. */
+  per_lead?: { lead: number; bss: number }[];
+  /** Reliability/calibration bins: predicted vs observed frequency. */
+  calibration?: { predicted: number; observed: number }[];
 }
 
 /**

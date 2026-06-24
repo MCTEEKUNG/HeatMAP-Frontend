@@ -193,6 +193,7 @@ function WebLeafletMap({
   neutral,
   provinceRisk,
   onSelectProvince,
+  fitPaddingTop = 16,
 }: {
   gridData: GridCell[];
   userLocation: { latitude: number; longitude: number } | null;
@@ -201,6 +202,7 @@ function WebLeafletMap({
   neutral: boolean;
   provinceRisk?: Record<string, ProvinceRisk> | null;
   onSelectProvince?: (provinceName: string) => void;
+  fitPaddingTop?: number;
 }) {
   const [MapView, setMapView] = useState<any>(null);
   const [thailandGeo, setThailandGeo] = useState<any>(null);
@@ -235,19 +237,18 @@ function WebLeafletMap({
 
     useEffect(() => {
       if (!map || !MapView?.L) return;
-      // Fit the full Thailand extent once the map is ready. Pad asymmetrically
-      // so the country sits in the clear band BETWEEN the floating cards: the
-      // week-selector stack covers ~150px up top, the "your area" card ~210px at
-      // the bottom. Uniform padding would tuck Thailand's north/south under them.
+      // Fit the full Thailand extent once the map is ready. `fitPaddingTop` clears
+      // any controls floating over the top (week pills in the expanded view ~72px;
+      // ~12px for the mini card which has no overlay). Bottom keeps a small margin.
       const bounds = MapView.L.latLngBounds(
         [THAILAND_BOUNDS.south, THAILAND_BOUNDS.west],
         [THAILAND_BOUNDS.north, THAILAND_BOUNDS.east],
       );
       map.fitBounds(bounds, {
-        paddingTopLeft: [16, 150],
-        paddingBottomRight: [16, 210],
+        paddingTopLeft: [16, fitPaddingTop],
+        paddingBottomRight: [16, 24],
       });
-    }, [map]);
+    }, [map, fitPaddingTop]);
 
     return null;
   };
@@ -508,6 +509,7 @@ export function MapGrid({
   neutral = false,
   provinceRisk = null,
   onSelectProvince,
+  fitPaddingTop,
 }: {
   gridData?: GridCell[];
   userLocation?: { latitude: number; longitude: number } | null;
@@ -523,6 +525,8 @@ export function MapGrid({
   // Callback fired when user taps a province on the map (web: GeoJSON polygon;
   // native: grid cell with provinceName populated by map.tsx).
   onSelectProvince?: (provinceName: string) => void;
+  // Top padding (px) for fitBounds — clears controls floating over the map top.
+  fitPaddingTop?: number;
 }) {
   const [isWeb, setIsWeb] = useState(false);
   
@@ -543,6 +547,7 @@ export function MapGrid({
           neutral={neutral}
           provinceRisk={provinceRisk}
           onSelectProvince={onSelectProvince}
+          fitPaddingTop={fitPaddingTop}
         />
       ) : (
         <NativeMapView

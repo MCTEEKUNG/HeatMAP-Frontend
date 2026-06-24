@@ -104,6 +104,7 @@ const MAPPING: IconMapping = {
   'checkmark': 'check',
   'clock': 'schedule',
   'wifi.slash': 'wifi-off',
+  'open_in_full': 'open-in-full',
 };
 
 /**
