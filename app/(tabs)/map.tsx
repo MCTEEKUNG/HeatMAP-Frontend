@@ -11,7 +11,6 @@ import { ScaledText } from '@/components/ui/ScaledText';
 import { getWeekData, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint } from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
-import { SummaryBar } from '@/components/map/SummaryBar';
 import { WeekSegmentedControl } from '@/components/map/WeekSegmentedControl';
 import { RiskGauge } from '@/components/map/RiskGauge';
 import { useRouter } from 'expo-router';
@@ -185,20 +184,6 @@ export default function MapScreen() {
     return rec;
   }, [mapPoints, provinces]);
 
-  // National tier counts for the floating status chip (mockup top-right)
-  const tierCounts = useMemo(() => {
-    let watch = 0;
-    let warn = 0;
-    if (provinceRisk) {
-      for (const key of Object.keys(provinceRisk)) {
-        const lv = provinceRisk[key].level;
-        if (lv === 'watch') watch += 1;
-        else if (lv === 'warning' || lv === 'extreme') warn += 1;
-      }
-    }
-    return { watch, warn };
-  }, [provinceRisk]);
-
   useEffect(() => {
     loadForecastMap();
   }, [loadForecastMap]);
@@ -305,9 +290,15 @@ export default function MapScreen() {
   }, []);
 
   // Get location coordinates for MapGrid
-  const locationCoords = userLocation 
+  const locationCoords = userLocation
     ? { latitude: userLocation.latitude, longitude: userLocation.longitude }
     : null;
+
+  // Mode-notice colours: Week 1 = info (live forecast), Weeks 2-4 = prediction.
+  const modeInfoBg   = isDarkMode ? 'rgba(59,130,246,0.18)' : 'rgba(59,130,246,0.12)';
+  const modeInfoText = isDarkMode ? '#9CC2F0' : '#1D4ED8';
+  const modePredBg   = isDarkMode ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.14)';
+  const modePredText = isDarkMode ? '#FFC14D' : '#B45309';
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -346,19 +337,33 @@ export default function MapScreen() {
           onSelectProvince={handleSelectProvince}
         />
 
-        {/* ── Week segmented control (Week 1–4 with date ranges + risk dots) ── */}
-        <View style={styles.weekSelectorRow} pointerEvents="auto">
+        {/* ── Week selector (dates anchored to today, Bangkok time) + a notice
+               that Week 1 is a live forecast, Weeks 2-4 are model predictions ── */}
+        <View style={styles.weekSelectorRow} pointerEvents="box-none">
           <WeekSegmentedControl
             selectedWeek={selectedWeek}
             onSelect={setSelectedWeek}
           />
+          <View
+            style={[
+              styles.modeNotice,
+              { backgroundColor: selectedWeek === 1 ? modeInfoBg : modePredBg },
+            ]}
+            pointerEvents="none"
+          >
+            <ScaledText style={[styles.modeNoticeText, { color: selectedWeek === 1 ? modeInfoText : modePredText }]} numberOfLines={1}>
+              {selectedWeek === 1
+                ? (language === 'th' ? 'ⓘ สัปดาห์นี้ — พยากรณ์อากาศจริง ไม่ใช่การทำนายล่วงหน้า' : 'ⓘ This week — live forecast, not a prediction')
+                : (language === 'th' ? 'ⓘ การคาดการณ์ล่วงหน้าด้วยโมเดล S2S' : 'ⓘ Sub-seasonal prediction (S2S model)')}
+            </ScaledText>
+          </View>
         </View>
 
         {/* Load-state overlays — keep "no data" visually distinct from low risk */}
         {status === 'loading' && (
           <View
             pointerEvents="none"
-            style={[styles.statusOverlay, { top: 166 }]}
+            style={[styles.statusOverlay, { top: 110 }]}
           >
             <View
               style={[
@@ -377,7 +382,7 @@ export default function MapScreen() {
 
         {(status === 'error' || status === 'empty') && (
           <View
-            style={[styles.statusOverlay, { top: 166 }]}
+            style={[styles.statusOverlay, { top: 110 }]}
           >
             <View
               style={[
@@ -401,18 +406,8 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* ── Summary bar — title + date range + national status chip ── */}
-        <View style={styles.mapTop} pointerEvents="box-none">
-          <SummaryBar
-            selectedWeek={selectedWeek}
-            watchCount={tierCounts.watch}
-            warnCount={tierCounts.warn}
-            dataReady={dataReady}
-          />
-        </View>
-
-        {/* Locate FAB — below the status overlay (top ~64+44=108), hugging right edge */}
-        <View style={[styles.fabContainer, { right: 12, top: 166 }]}>
+        {/* Locate FAB — below the status overlay, hugging right edge */}
+        <View style={[styles.fabContainer, { right: 12, top: 110 }]}>
           <TouchableOpacity
             style={[
               styles.fab,
@@ -492,20 +487,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // ── Summary bar + week selector overlays ──
-  mapTop: {
+  // ── Week selector overlay (top of screen) ──
+  weekSelectorRow: {
     position: 'absolute',
     top: 14,
     left: 12,
     right: 12,
     zIndex: 30,
+    gap: 6,
   },
-  weekSelectorRow: {
-    position: 'absolute',
-    top: 86,
-    left: 12,
-    right: 12,
-    zIndex: 30,
+  modeNotice: {
+    alignSelf: 'center',
+    maxWidth: '100%',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    ...(typeof window !== 'undefined'
+      ? ({ backdropFilter: 'blur(10px) saturate(160%)' } as object)
+      : {}),
+  },
+  modeNoticeText: {
+    fontSize: 10.5,
+    fontFamily: FontFamily.bodyMedium,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   userCard: {
     position: 'absolute',
