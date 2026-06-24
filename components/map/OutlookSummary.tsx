@@ -24,28 +24,54 @@ interface Props {
   weeks: OutlookPoint[];
   selectedWeek: 1 | 2 | 3 | 4;
   onSelect: (week: 1 | 2 | 3 | 4) => void;
+  /** The user's detected province — shown prominently so the outlook reads as "yours". */
+  provinceName?: string;
 }
 
-export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
+export function OutlookSummary({ weeks, selectedWeek, onSelect, provinceName }: Props) {
   const { isDarkMode, language } = useSettings();
   const th = language === 'th';
 
   const textColor = isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)';
   const muted = isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
+  const accent = isDarkMode ? '#7FA3C8' : '#16324F';
+
+  const ProvinceRow = provinceName ? (
+    <View style={styles.provRow}>
+      <ScaledText style={styles.pin}>📍</ScaledText>
+      <ScaledText style={[styles.prov, { color: accent }]} numberOfLines={1}>{provinceName}</ScaledText>
+      <ScaledText style={[styles.provHint, { color: muted }]} numberOfLines={1}>
+        {th ? 'พื้นที่ของคุณ' : 'your area'}
+      </ScaledText>
+    </View>
+  ) : null;
 
   // Weeks 2-4 (the model forecast). Keep unavailable ones so the chart shows them muted.
   const forecastAll = weeks.filter((w) => w.week !== 1);
   const forecast = forecastAll.filter((w) => w.available);
   const current = weeks.find((w) => w.week === 1);
 
-  // Trend direction across the available forecast weeks (by HeatRisk level).
+  // Trend across the available forecast weeks. Prefer the raw value (probability)
+  // for a finer read; fall back to level. (Forecast weeks are all the same unit.)
   let dir: 'up' | 'down' | 'flat' = 'flat';
   if (forecast.length >= 2) {
-    const d = forecast[forecast.length - 1].level - forecast[0].level;
-    dir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
+    const a = forecast[0];
+    const b = forecast[forecast.length - 1];
+    if (a.value !== null && b.value !== null) {
+      const d = b.value - a.value;
+      dir = d > 3 ? 'up' : d < -3 ? 'down' : 'flat';
+    } else {
+      const d = b.level - a.level;
+      dir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
+    }
   }
-  // Peak = highest level among forecast weeks (latest wins on a tie).
-  const peak = forecast.reduce<OutlookPoint | null>((m, w) => (!m || w.level >= m.level ? w : m), null);
+  // Peak = highest risk: by level, then by raw value on a tie (so "peak" never
+  // points to a lower-% week just because it comes later).
+  const peak = forecast.reduce<OutlookPoint | null>((m, w) => {
+    if (!m) return w;
+    if (w.level !== m.level) return w.level > m.level ? w : m;
+    return (w.value ?? -Infinity) > (m.value ?? -Infinity) ? w : m;
+  }, null);
 
   const arrow = dir === 'up' ? '↗' : dir === 'down' ? '↘' : '→';
   const arrowColor = dir === 'up' ? '#E5352B' : dir === 'down' ? '#4ade80' : muted;
@@ -65,6 +91,7 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
   if (forecast.length === 0) {
     return (
       <View>
+        {ProvinceRow}
         <ScaledText style={[styles.emptyText, { color: muted }]}>
           {th ? 'ยังไม่มีพยากรณ์ล่วงหน้าในขณะนี้' : 'No forward outlook available yet'}
         </ScaledText>
@@ -81,6 +108,7 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
 
   return (
     <View>
+      {ProvinceRow}
       {/* Narrative headline */}
       <View style={styles.headRow}>
         <ScaledText style={[styles.headline, { color: textColor }]} numberOfLines={1}>{headline}</ScaledText>
@@ -140,6 +168,10 @@ function CurrentChip({ th, value, src, active, onPress, isDarkMode }: {
 }
 
 const styles = StyleSheet.create({
+  provRow: { flexDirection: 'row', alignItems: 'baseline', gap: 5, marginBottom: 6 },
+  pin: { fontSize: 13 },
+  prov: { fontSize: 17, fontFamily: FontFamily.display, fontWeight: '800', letterSpacing: -0.3 },
+  provHint: { fontSize: 10.5, fontFamily: FontFamily.body },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headline: { fontSize: 21, fontFamily: FontFamily.display, fontWeight: '800', letterSpacing: -0.4 },
   arrow: { fontSize: 22, fontWeight: '800' },

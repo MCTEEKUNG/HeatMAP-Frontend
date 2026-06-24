@@ -117,6 +117,8 @@ export interface OutlookPoint {
   level: HeatLevel;
   /** Display value, already formatted: "37.7°C" (live) or "28%" (S2S). '' if N/A. */
   valueText: string;
+  /** Raw numeric for ranking/trend: probability percent (S2S) or apparent °C (live). */
+  value: number | null;
   source: 's2s' | 'open-meteo' | null;
   /** false when this week is beyond the model horizon / has no point for the province. */
   available: boolean;
@@ -143,17 +145,21 @@ export async function getProvinceOutlook(
       pt = undefined;
     }
     if (!pt) {
-      out.push({ week, startISO, endISO, level: 0, valueText: '', source: null, available: false });
+      out.push({ week, startISO, endISO, level: 0, valueText: '', value: null, source: null, available: false });
       continue;
     }
     const level = (pt.heat_level !== undefined
       ? pt.heat_level
       : levelFromRiskLevel(pt.risk_level)) as HeatLevel;
+    const value =
+      pt.apparent_temp_c !== undefined ? pt.apparent_temp_c
+      : pt.probability !== undefined ? Math.round(pt.probability * 100)
+      : null;
     const valueText =
       pt.apparent_temp_c !== undefined ? `${pt.apparent_temp_c}°C`
       : pt.probability !== undefined ? `${Math.round(pt.probability * 100)}%`
       : '';
-    out.push({ week, startISO, endISO, level, valueText, source: pt.source ?? null, available: true });
+    out.push({ week, startISO, endISO, level, valueText, value, source: pt.source ?? null, available: true });
   }
   return out;
 }

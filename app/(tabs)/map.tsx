@@ -168,6 +168,18 @@ export default function MapScreen() {
     return () => { active = false; };
   }, [myProvince, provinces]);
 
+  // A box around the user's province for the mini map. Thailand is a tall
+  // country; framing all of it in a short, wide card forces a huge zoom-out
+  // (you'd see half the region). Zooming to the province + neighbours fits a
+  // mobile card cleanly and reads as "your area".
+  const provinceBox = useMemo(() => {
+    if (!myProvince) return null;
+    return {
+      south: myProvince.lat - 1.7, north: myProvince.lat + 1.7,
+      west: myProvince.lon - 2.3, east: myProvince.lon + 2.3,
+    };
+  }, [myProvince]);
+
   const dataReady = status === 'ready';
   const myProvincePoint = useMemo(
     () => (myProvince ? mapPoints.find((p) => p.province_id === myProvince.id) ?? null : null),
@@ -283,14 +295,18 @@ export default function MapScreen() {
           {th ? 'แนวโน้มคลื่นความร้อน' : 'Heatwave outlook'}
         </ScaledText>
         <ScaledText style={[styles.subtitle, { color: theme.textMuted }]} numberOfLines={1}>
-          {(th ? 'พื้นที่ของคุณ' : 'Your area')}{myProvince ? ` · ${th ? myProvince.name_th : myProvince.name_en}` : ''}
-          {asOf ? `  ·  ${th ? 'ข้อมูล ณ' : 'as of'} ${asOf}` : ''}
+          {asOf ? `${th ? 'ข้อมูล ณ' : 'as of'} ${asOf}` : (th ? 'พยากรณ์รายจังหวัด' : 'province-level forecast')}
         </ScaledText>
 
         {/* HERO — forecast-first outlook (weeks 2-4 = S2S model) */}
         <View style={[styles.card, glass]}>
           {outlook.length > 0 ? (
-            <OutlookSummary weeks={outlook} selectedWeek={selectedWeek} onSelect={setSelectedWeek} />
+            <OutlookSummary
+              weeks={outlook}
+              selectedWeek={selectedWeek}
+              onSelect={setSelectedWeek}
+              provinceName={myProvince ? (th ? myProvince.name_th : myProvince.name_en) : undefined}
+            />
           ) : (
             <View style={styles.chartLoading}><ActivityIndicator color={theme.primary} /></View>
           )}
@@ -346,10 +362,10 @@ export default function MapScreen() {
         <View style={[styles.card, glass, styles.mapCard]}>
           <View style={styles.mapCardHead}>
             <ScaledText style={[styles.cardTitle, { color: theme.text }]}>
-              {th ? 'แผนที่ทั้งประเทศ' : 'National map'}
+              {myProvince ? (th ? `แผนที่ · ${myProvince.name_th}` : `Map · ${myProvince.name_en}`) : (th ? 'แผนที่' : 'Map')}
             </ScaledText>
             <ScaledText style={[styles.mapHint, { color: theme.textMuted }]}>
-              {th ? `สัปดาห์ที่ ${selectedWeek}` : `Week ${selectedWeek}`}
+              {th ? `สัปดาห์ที่ ${selectedWeek} · แตะดูทั้งประเทศ` : `Week ${selectedWeek} · tap for national`}
             </ScaledText>
           </View>
           <View style={styles.mapMiniWrap}>
@@ -360,6 +376,7 @@ export default function MapScreen() {
               neutral={status !== 'ready'}
               provinceRisk={provinceRisk}
               fitPaddingTop={12}
+              focusBounds={provinceBox}
               style={styles.mapMini}
             />
             {/* Tap-catcher: whole mini-map expands; also stops Leaflet eating page scroll */}
@@ -403,7 +420,7 @@ const styles = StyleSheet.create({
   mapCard: { padding: 10 },
   mapCardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingHorizontal: 2 },
   mapHint: { fontSize: 10, fontFamily: FontFamily.body },
-  mapMiniWrap: { height: 190, borderRadius: 12, overflow: 'hidden', position: 'relative' },
+  mapMiniWrap: { height: 230, borderRadius: 12, overflow: 'hidden', position: 'relative' },
   mapMini: { flex: 1 },
   mapTapCatcher: { ...StyleSheet.absoluteFillObject, alignItems: 'flex-end', justifyContent: 'flex-start', padding: 8 },
   expandChip: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },

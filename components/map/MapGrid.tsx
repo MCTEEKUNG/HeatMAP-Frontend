@@ -194,6 +194,7 @@ function WebLeafletMap({
   provinceRisk,
   onSelectProvince,
   fitPaddingTop = 16,
+  focusBounds,
 }: {
   gridData: GridCell[];
   userLocation: { latitude: number; longitude: number } | null;
@@ -203,6 +204,7 @@ function WebLeafletMap({
   provinceRisk?: Record<string, ProvinceRisk> | null;
   onSelectProvince?: (provinceName: string) => void;
   fitPaddingTop?: number;
+  focusBounds?: { south: number; west: number; north: number; east: number } | null;
 }) {
   const [MapView, setMapView] = useState<any>(null);
   const [thailandGeo, setThailandGeo] = useState<any>(null);
@@ -237,18 +239,17 @@ function WebLeafletMap({
 
     useEffect(() => {
       if (!map || !MapView?.L) return;
-      // Fit the full Thailand extent once the map is ready. `fitPaddingTop` clears
-      // any controls floating over the top (week pills in the expanded view ~72px;
-      // ~12px for the mini card which has no overlay). Bottom keeps a small margin.
-      const bounds = MapView.L.latLngBounds(
-        [THAILAND_BOUNDS.south, THAILAND_BOUNDS.west],
-        [THAILAND_BOUNDS.north, THAILAND_BOUNDS.east],
-      );
+      // Frame either a focus area (e.g. the user's province for the mini card —
+      // Thailand is a tall country, so framing the whole of it in a short, wide
+      // card forces a huge zoom-out) or the full Thailand extent (expanded view).
+      // `fitPaddingTop` clears controls floating over the top.
+      const b = focusBounds ?? THAILAND_BOUNDS;
+      const bounds = MapView.L.latLngBounds([b.south, b.west], [b.north, b.east]);
       map.fitBounds(bounds, {
         paddingTopLeft: [16, fitPaddingTop],
         paddingBottomRight: [16, 24],
       });
-    }, [map, fitPaddingTop]);
+    }, [map, fitPaddingTop, focusBounds?.south, focusBounds?.west, focusBounds?.north, focusBounds?.east]);
 
     return null;
   };
@@ -510,6 +511,7 @@ export function MapGrid({
   provinceRisk = null,
   onSelectProvince,
   fitPaddingTop,
+  focusBounds,
 }: {
   gridData?: GridCell[];
   userLocation?: { latitude: number; longitude: number } | null;
@@ -527,6 +529,8 @@ export function MapGrid({
   onSelectProvince?: (provinceName: string) => void;
   // Top padding (px) for fitBounds — clears controls floating over the map top.
   fitPaddingTop?: number;
+  // Optional area to frame instead of the whole country (e.g. the user's province).
+  focusBounds?: { south: number; west: number; north: number; east: number } | null;
 }) {
   const [isWeb, setIsWeb] = useState(false);
   
@@ -548,6 +552,7 @@ export function MapGrid({
           provinceRisk={provinceRisk}
           onSelectProvince={onSelectProvince}
           fitPaddingTop={fitPaddingTop}
+          focusBounds={focusBounds}
         />
       ) : (
         <NativeMapView
