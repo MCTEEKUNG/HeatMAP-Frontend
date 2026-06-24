@@ -37,9 +37,9 @@ function addDaysISO(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function mapPoints(c: Contract): MapForecastPoint[] {
+export function mapPoints(c: Contract, leadWeeks: number = 2): MapForecastPoint[] {
   return c.provinces.map((p) => {
-    const f = p.forecasts.find((x) => x.lead_weeks === 2) ?? p.forecasts[0];
+    const f = p.forecasts.find((x) => x.lead_weeks === leadWeeks) ?? p.forecasts[0];
     return {
       province_id: p.id,
       lat: p.lat,

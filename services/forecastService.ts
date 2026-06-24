@@ -49,8 +49,8 @@ export async function getProvinceForecast(provinceId: number): Promise<ProvinceF
 }
 
 /** Fetch the latest forecast value for every province (for the map). */
-export async function getForecastMap(): Promise<MapForecastPoint[]> {
-  return mapPoints(await loadContract());
+export async function getForecastMap(leadWeeks: number = 2): Promise<MapForecastPoint[]> {
+  return mapPoints(await loadContract(), leadWeeks);
 }
 
 

@@ -78,6 +78,9 @@ export default function MapScreen() {
   // Ref so loadForecastMap (a useCallback) can access provinces without stale closure.
   const provincesRef = useRef<Province[]>([]);
 
+  // ── Week selector state (lead_weeks 2/3/4) ───────────────────────────────
+  const [selectedWeek, setSelectedWeek] = useState<2 | 3 | 4>(2);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -110,7 +113,7 @@ export default function MapScreen() {
   const loadForecastMap = useCallback(async () => {
     setStatus('loading');
     try {
-      const points = await getForecastMap();
+      const points = await getForecastMap(selectedWeek);
 
       if (!Array.isArray(points) || points.length === 0) {
         // Fetch succeeded but no forecast yet — grey grid + retry, not green
@@ -151,7 +154,7 @@ export default function MapScreen() {
       setMapGeneratedAt(null);
       setStatus('error');
     }
-  }, []);
+  }, [selectedWeek]);
 
   // Province choropleth data (web): join forecast points with province names.
   // The model forecasts per PROVINCE — polygons are the honest rendering.
@@ -322,11 +325,37 @@ export default function MapScreen() {
           onSelectProvince={handleSelectProvince}
         />
 
+        {/* ── Week selector ─────────────────────────────────────────────────── */}
+        <View style={styles.weekSelectorRow} pointerEvents="auto">
+          {([2, 3, 4] as const).map((week) => (
+            <TouchableOpacity
+              key={week}
+              style={[
+                styles.weekBtn,
+                selectedWeek === week && { backgroundColor: theme.primary },
+                selectedWeek !== week && GlassStyle[isDarkMode ? 'dark' : 'light'],
+              ]}
+              onPress={() => setSelectedWeek(week)}
+              accessibilityRole="button"
+              accessibilityLabel={`สัปดาห์ที่ ${week}`}
+            >
+              <ScaledText
+                style={[
+                  styles.weekBtnText,
+                  { color: selectedWeek === week ? '#fff' : theme.textSecondary },
+                ]}
+              >
+                {language === 'th' ? `ส.${week}` : `Wk${week}`}
+              </ScaledText>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Load-state overlays — keep "no data" visually distinct from low risk */}
         {status === 'loading' && (
           <View
             pointerEvents="none"
-            style={[styles.statusOverlay, { top: 64 }]}
+            style={[styles.statusOverlay, { top: 96 }]}
           >
             <View
               style={[
@@ -345,7 +374,7 @@ export default function MapScreen() {
 
         {(status === 'error' || status === 'empty') && (
           <View
-            style={[styles.statusOverlay, { top: 64 }]}
+            style={[styles.statusOverlay, { top: 96 }]}
           >
             <View
               style={[
@@ -529,6 +558,26 @@ const styles = StyleSheet.create({
   },
   tierDot: { width: 7, height: 7, borderRadius: 4 },
   tierChipText: { fontSize: 11.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  weekSelectorRow: {
+    position: 'absolute',
+    top: 54,
+    left: 12,
+    right: 12,
+    zIndex: 30,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  weekBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  weekBtnText: {
+    fontSize: 12,
+    fontFamily: FontFamily.bodySemi,
+    fontWeight: '600',
+  },
   userCard: {
     position: 'absolute',
     left: 12,
