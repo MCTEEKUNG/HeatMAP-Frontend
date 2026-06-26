@@ -46,19 +46,29 @@ export interface WeekRange {
 
 /**
  * Returns the calendar date range for the given forecast week, anchored to
- * today in Bangkok time.
+ * the start of the current ISO week (Monday) in Bangkok time.
  *
- *   Week 1 = today + 0..+6   (1–7 day NWP forecast, Open-Meteo)
- *   Week 2 = today + 7..+13  (S2S lead-week 2)
- *   Week 3 = today + 14..+20 (S2S lead-week 3)
- *   Week 4 = today + 21..+27 (S2S lead-week 4)
+ *   Week 1 = this Monday + 0..+6   (current calendar week)
+ *   Week 2 = this Monday + 7..+13  (next calendar week)
+ *   Week 3 = this Monday + 14..+20
+ *   Week 4 = this Monday + 21..+27
+ *
+ * Anchoring to Monday (rather than today) keeps displayed date ranges stable
+ * throughout the week and aligned with how users read calendars.
  */
 export function weekRange(week: 1 | 2 | 3 | 4, now?: Date): WeekRange {
-  const today = todayBangkokISO(now);
+  const d = bangkokDate(now);
+  // ISO week starts on Monday. getUTCDay() returns 0=Sun…6=Sat.
+  const dow = d.getUTCDay();
+  const daysSinceMonday = (dow + 6) % 7;
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const weekMonday = addDays(`${y}-${m}-${day}`, -daysSinceMonday);
   const offset = (week - 1) * 7;
   return {
-    startISO: addDays(today, offset),
-    endISO:   addDays(today, offset + 6),
+    startISO: addDays(weekMonday, offset),
+    endISO:   addDays(weekMonday, offset + 6),
   };
 }
 
