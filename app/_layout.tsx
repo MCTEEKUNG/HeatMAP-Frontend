@@ -50,11 +50,20 @@ const CustomDarkTheme = {
 function AppContent({ children }: { children: React.ReactNode }) {
   const { isDarkMode } = useSettings();
   const colorScheme = isDarkMode ? 'dark' : 'light';
+  const themedChildren = Platform.OS === 'web'
+    ? (
+      <View style={[styles.webRoot, { backgroundColor: Colors[colorScheme].background }]}>
+        <View style={[styles.webShell, { backgroundColor: Colors[colorScheme].background }]}>
+          {children}
+        </View>
+      </View>
+    )
+    : children;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-      {children}
+      {themedChildren}
     </ThemeProvider>
   );
 }
@@ -97,6 +106,19 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  webRoot: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+  },
+  webShell: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 430,
+    minHeight: '100%' as any,
+    overflow: 'hidden',
+    position: 'relative',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
