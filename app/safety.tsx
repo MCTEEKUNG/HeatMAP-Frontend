@@ -265,7 +265,7 @@ export default function SafetyScreen() {
   }, [selectedRisk]);
 
   const showOutdoorToggle = selectedRisk === 'High' || selectedRisk === 'Elevated';
-  const showShelter = selectedRisk === 'High' || selectedRisk === 'Elevated';
+  const showShelter = true;
 
   // Compute final steps: outdoor prepend + base steps
   const outdoorPrepend: Step[] =
@@ -533,95 +533,13 @@ out center 40;`;
           </View>
         )}
 
-        {/* ── Steps header + progress ── */}
-        <View style={styles.stepsHeader}>
-          <ScaledText style={[styles.sectionLabel, { color: theme.textMuted }]}>
-            {isTh ? 'ทำตอนนี้เลย' : 'Do this now'}
-          </ScaledText>
-          {doneCount > 0 && (
-            allDone ? (
-              <View style={styles.allDoneInline}>
-                <IconSymbol name="check_circle" size={14} color={RiskColors.safe} />
-                <ScaledText style={[styles.progressText, { color: RiskColors.safe }]}>
-                  {isTh ? 'ครบทุกขั้นตอน' : 'All done'}
-                </ScaledText>
-              </View>
-            ) : (
-              <ScaledText style={[styles.progressText, { color: accentColor }]}>
-                {`${doneCount}/${steps.length}`}
-              </ScaledText>
-            )
-          )}
-        </View>
-
-        {/* ── Step Cards ── */}
-        {steps.map((step, i) => {
-          const [title, detail] = isTh ? step.th : step.en;
-          const isDone = checked.has(i);
-          const isFirst = i === nextStep;
-          const isUrgent = step.urgent === true;
-
-          return (
-            <Pressable
-              key={`${selectedRisk}-${activityMode}-${i}`}
-              onPress={() => toggle(i)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: isDone }}
-              style={({ pressed }) => [
-                styles.stepCard,
-                GlassStyle[isDarkMode ? 'dark' : 'light'],
-                isUrgent && !isDone && { borderLeftWidth: 3, borderLeftColor: accentColor },
-                isFirst && !isUrgent && { borderColor: accentColor, borderWidth: 1 },
-                isDone && { opacity: 0.55 },
-                pressed && { opacity: 0.7 },
-              ]}
-            >
-              <View
-                style={[
-                  styles.checkCircle,
-                  isDone
-                    ? { backgroundColor: RiskColors.safe, borderColor: RiskColors.safe }
-                    : isFirst
-                      ? { backgroundColor: accentColor, borderColor: accentColor }
-                      : { backgroundColor: 'transparent', borderColor: isDarkMode ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.14)' },
-                ]}
-              >
-                {isDone ? (
-                  <IconSymbol name="check" size={16} color="#fff" />
-                ) : (
-                  <ScaledText style={[styles.checkNum, { color: isFirst ? '#fff' : theme.textMuted }]}>
-                    {i + 1}
-                  </ScaledText>
-                )}
-              </View>
-
-              <View style={styles.stepBody}>
-                <ScaledText style={[styles.stepTitle, { color: theme.text }, isDone && styles.stepDone]}>
-                  {title}
-                </ScaledText>
-                <ScaledText style={[styles.stepDetail, { color: theme.textMuted }]}>
-                  {detail}
-                </ScaledText>
-              </View>
-            </Pressable>
-          );
-        })}
-
-        {allDone && (
-          <View style={[styles.allDoneBanner, { backgroundColor: RiskColors.safe + '18', borderColor: RiskColors.safe + '44' }]}>
-            <ScaledText style={[styles.allDoneText, { color: RiskColors.safe }]}>
-              {isTh ? 'เยี่ยมมาก! คุณทำครบทุกขั้นตอนแล้ว' : "Great! You've completed all steps"}
-            </ScaledText>
-          </View>
-        )}
-
-        {/* ── Cool Shelter Finder (High / Elevated only) ── */}
+        {/* ── Public A/C Place Finder ── */}
         {showShelter && (
           <View style={[styles.shelterCard, GlassStyle[isDarkMode ? 'dark' : 'light'], { borderColor: accentColor + '55', borderWidth: 1 }]}>
             <View style={styles.shelterTitleRow}>
               <IconSymbol name="ac_unit" size={18} color={accentColor} />
               <ScaledText style={[styles.shelterTitle, { color: theme.text }]}>
-                {isTh ? 'หาที่พักร้อนใกล้คุณ' : 'Find a Cool Shelter'}
+                {isTh ? 'หาพื้นที่สาธารณะติดแอร์' : 'Find public A/C nearby'}
               </ScaledText>
             </View>
 
@@ -630,8 +548,8 @@ out center 40;`;
               <>
                 <ScaledText style={[styles.shelterSub, { color: theme.textMuted }]}>
                   {isTh
-                    ? 'สำหรับผู้อยู่กลางแจ้ง — ค้นหาสถานที่เย็นที่ใกล้คุณที่สุด'
-                    : 'For those outdoors — finds the nearest cool place to escape the heat'}
+                    ? 'ค้นหาห้าง ห้องสมุด โรงพยาบาล คาเฟ่ หรืออาคารสาธารณะใกล้คุณ'
+                    : 'Find malls, libraries, hospitals, cafes, or public buildings nearby'}
                 </ScaledText>
                 <TouchableOpacity
                   style={[styles.shelterFetchBtn, { backgroundColor: accentColor }]}
@@ -640,7 +558,7 @@ out center 40;`;
                 >
                   <IconSymbol name="location_on" size={16} color="#fff" />
                   <ScaledText style={styles.shelterFetchText}>
-                    {isTh ? 'หาตอนนี้' : 'Find Now'}
+                    {isTh ? 'ค้นหาใกล้ฉัน' : 'Search nearby'}
                   </ScaledText>
                 </TouchableOpacity>
               </>
@@ -731,6 +649,88 @@ out center 40;`;
                 </View>
               </>
             )}
+          </View>
+        )}
+
+        {/* ── Steps header + progress ── */}
+        <View style={styles.stepsHeader}>
+          <ScaledText style={[styles.sectionLabel, { color: theme.textMuted }]}>
+            {isTh ? 'ทำตอนนี้เลย' : 'Do this now'}
+          </ScaledText>
+          {doneCount > 0 && (
+            allDone ? (
+              <View style={styles.allDoneInline}>
+                <IconSymbol name="check_circle" size={14} color={RiskColors.safe} />
+                <ScaledText style={[styles.progressText, { color: RiskColors.safe }]}>
+                  {isTh ? 'ครบทุกขั้นตอน' : 'All done'}
+                </ScaledText>
+              </View>
+            ) : (
+              <ScaledText style={[styles.progressText, { color: accentColor }]}>
+                {`${doneCount}/${steps.length}`}
+              </ScaledText>
+            )
+          )}
+        </View>
+
+        {/* ── Step Cards ── */}
+        {steps.map((step, i) => {
+          const [title, detail] = isTh ? step.th : step.en;
+          const isDone = checked.has(i);
+          const isFirst = i === nextStep;
+          const isUrgent = step.urgent === true;
+
+          return (
+            <Pressable
+              key={`${selectedRisk}-${activityMode}-${i}`}
+              onPress={() => toggle(i)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isDone }}
+              style={({ pressed }) => [
+                styles.stepCard,
+                GlassStyle[isDarkMode ? 'dark' : 'light'],
+                isUrgent && !isDone && { borderLeftWidth: 3, borderLeftColor: accentColor },
+                isFirst && !isUrgent && { borderColor: accentColor, borderWidth: 1 },
+                isDone && { opacity: 0.55 },
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <View
+                style={[
+                  styles.checkCircle,
+                  isDone
+                    ? { backgroundColor: RiskColors.safe, borderColor: RiskColors.safe }
+                    : isFirst
+                      ? { backgroundColor: accentColor, borderColor: accentColor }
+                      : { backgroundColor: 'transparent', borderColor: isDarkMode ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.14)' },
+                ]}
+              >
+                {isDone ? (
+                  <IconSymbol name="check" size={16} color="#fff" />
+                ) : (
+                  <ScaledText style={[styles.checkNum, { color: isFirst ? '#fff' : theme.textMuted }]}>
+                    {i + 1}
+                  </ScaledText>
+                )}
+              </View>
+
+              <View style={styles.stepBody}>
+                <ScaledText style={[styles.stepTitle, { color: theme.text }, isDone && styles.stepDone]}>
+                  {title}
+                </ScaledText>
+                <ScaledText style={[styles.stepDetail, { color: theme.textMuted }]}>
+                  {detail}
+                </ScaledText>
+              </View>
+            </Pressable>
+          );
+        })}
+
+        {allDone && (
+          <View style={[styles.allDoneBanner, { backgroundColor: RiskColors.safe + '18', borderColor: RiskColors.safe + '44' }]}>
+            <ScaledText style={[styles.allDoneText, { color: RiskColors.safe }]}>
+              {isTh ? 'เยี่ยมมาก! คุณทำครบทุกขั้นตอนแล้ว' : "Great! You've completed all steps"}
+            </ScaledText>
           </View>
         )}
 
@@ -849,12 +849,15 @@ const styles = StyleSheet.create({
   activityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginBottom: 14,
+    flexWrap: 'wrap',
   },
   activityLabel: {
-    fontSize: 11,
-    fontFamily: FontFamily.body,
+    fontSize: 12.5,
+    lineHeight: 18,
+    fontFamily: FontFamily.bodySemi,
+    fontWeight: '700',
   },
   activityChips: {
     flexDirection: 'row',
@@ -864,15 +867,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingVertical: 4,
-    paddingHorizontal: 11,
+    minHeight: 34,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
   },
   activityChipText: {
-    fontSize: 11,
+    fontSize: 12.5,
+    lineHeight: 18,
     fontFamily: FontFamily.bodySemi,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   allDoneInline: {
     flexDirection: 'row',
@@ -1071,52 +1076,54 @@ const styles = StyleSheet.create({
   // ── Warning Signs ──
   warningRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     marginBottom: 18,
   },
   warningCard: {
     flex: 1,
     borderRadius: 12,
-    padding: 11,
-    gap: 6,
+    padding: 12,
+    gap: 7,
   },
   warningTitle: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontFamily: FontFamily.display,
-    fontWeight: '700',
-    lineHeight: 18,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   warningSub: {
-    fontSize: 10,
+    fontSize: 11.5,
+    lineHeight: 15,
     fontFamily: FontFamily.body,
-    marginTop: -4,
+    marginTop: -3,
   },
-  symptomList: { gap: 4, marginTop: 2 },
-  symptomRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  symptomList: { gap: 5, marginTop: 2 },
+  symptomRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
   symptomDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 6,
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 7,
     flexShrink: 0,
   },
   symptomText: {
-    fontSize: 11,
+    fontSize: 12.5,
     fontFamily: FontFamily.body,
-    lineHeight: 16,
+    lineHeight: 18,
     flex: 1,
   },
   warningAction: {
-    marginTop: 4,
-    paddingVertical: 5,
+    marginTop: 5,
+    paddingVertical: 7,
     paddingHorizontal: 8,
-    borderRadius: 7,
+    borderRadius: 8,
     borderWidth: 1,
   },
   warningActionText: {
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 17,
     fontFamily: FontFamily.bodySemi,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
   },
 

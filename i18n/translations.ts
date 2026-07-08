@@ -11,7 +11,6 @@ export interface Translations {
   
   // Navigation
   navMap: string;
-  navAlerts: string;
   navSafety: string;
   navProfile: string;
   navSettings: string;
@@ -153,8 +152,7 @@ const en: Record<TranslationKey, string> = {
   
   // Navigation
   navMap: 'MAP',
-  navAlerts: 'ALERTS',
-  navSafety: 'SAFETY',
+  navSafety: 'GUIDE',
   navProfile: 'PROFILE',
   navSettings: 'SETTINGS',
   
@@ -292,8 +290,7 @@ const th: Record<TranslationKey, string> = {
   
   // Navigation
   navMap: 'แผนที่',
-  navAlerts: 'แจ้งเตือน',
-  navSafety: 'ความปลอดภัย',
+  navSafety: 'คู่มือ',
   navProfile: 'โปรไฟล์',
   navSettings: 'ตั้งค่า',
   

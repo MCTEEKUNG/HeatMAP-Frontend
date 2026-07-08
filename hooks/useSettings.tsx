@@ -76,7 +76,7 @@ const defaultSettings: SettingsContextType = {
   themeMode: 'system',
   isDarkMode: false,
   setThemeMode: () => {},
-  language: 'en',
+  language: 'th',
   setLanguage: () => {},
   fontSize: 'default',
   setFontSize: () => {},
@@ -100,7 +100,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   
   // State with defaults
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('th');
   const [fontSize, setFontSizeState] = useState<FontSize>('default');
   const [pushNotifications, setPushNotificationsState] = useState<boolean>(true);
   const [hapticFeedback, setHapticFeedbackState] = useState<boolean>(false);

@@ -3,48 +3,46 @@
  *
  * Foregrounds the S2S model's contribution (weeks 2-4) and tells the story:
  *   - a narrative headline + trend arrow ("3 weeks ahead ↗ — risk rising")
- *   - a peak chip ("highest: week 4 · 31%")
  *   - the weeks 2-4 trend chart (OutlookChart)
- *   - the current week (Open-Meteo) demoted to a small tappable chip
+ *   - an action plan for the selected forecast week
  *
  * Current conditions aren't the star — the sub-seasonal forecast is.
  */
 
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { colorForLevel, HEAT_LEVELS } from '@/constants/heatRisk';
+import { View, StyleSheet } from 'react-native';
+import { colorForLevel, descriptorForLevel, HEAT_LEVELS, type HeatLevel } from '@/constants/heatRisk';
 import { FontFamily } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { formatWeekRange } from '@/utils/bangkokTime';
 import { OutlookChart } from './OutlookChart';
+import { RiskGauge } from './RiskGauge';
 import type { OutlookPoint } from '@/services/forecastService';
+import type { RiskLevel } from '@/services/forecastService';
+import { guidanceFor } from '@/constants/riskGuidance';
+import { humanRiskText, modelEvidenceText } from './outlookCopy';
 
 interface Props {
   weeks: OutlookPoint[];
   selectedWeek: 1 | 2 | 3 | 4;
   onSelect: (week: 1 | 2 | 3 | 4) => void;
-  /** The user's detected province — shown prominently so the outlook reads as "yours". */
   provinceName?: string;
 }
 
-export function OutlookSummary({ weeks, selectedWeek, onSelect, provinceName }: Props) {
+const riskFromLevel = (level: HeatLevel): RiskLevel => {
+  if (level >= 3) return 'High';
+  if (level === 2) return 'Elevated';
+  if (level === 1) return 'Normal';
+  return 'Low';
+};
+
+export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
   const { isDarkMode, language } = useSettings();
   const th = language === 'th';
 
   const textColor = isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)';
   const muted = isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
   const accent = isDarkMode ? '#7FA3C8' : '#16324F';
-
-  const ProvinceRow = provinceName ? (
-    <View style={styles.provRow}>
-      <ScaledText style={styles.pin}>📍</ScaledText>
-      <ScaledText style={[styles.prov, { color: accent }]} numberOfLines={1}>{provinceName}</ScaledText>
-      <ScaledText style={[styles.provHint, { color: muted }]} numberOfLines={1}>
-        {th ? 'พื้นที่ของคุณ' : 'your area'}
-      </ScaledText>
-    </View>
-  ) : null;
 
   // Weeks 2-4 (the model forecast). Keep unavailable ones so the chart shows them muted.
   const forecastAll = weeks.filter((w) => w.week !== 1);
@@ -82,33 +80,33 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect, provinceName }: 
       : (th ? 'ความเสี่ยงทรงตัว' : 'risk steady');
 
   const headline = th ? `${forecast.length} สัปดาห์ข้างหน้า` : `Next ${forecast.length} weeks`;
-
-  // Current-week chip text.
-  const curSrc = current?.source === 'open-meteo'
-    ? (th ? 'พยากรณ์จริง' : 'live')
-    : 'S2S';
+  const selected = weeks.find((w) => w.week === selectedWeek && w.available) ?? peak ?? forecast[0] ?? current;
+  const selectedRisk = selected ? riskFromLevel(selected.level) : 'Low';
+  const selectedGuidance = guidanceFor(selectedRisk, th ? 'th' : 'en');
+  const selectedBand = selected ? descriptorForLevel(selected.level) : HEAT_LEVELS[0];
+  const selectedHumanText = humanRiskText(selected, th);
+  const selectedFootnote = modelEvidenceText(selected, th);
+  const selectedColor = selected ? colorForLevel(selected.level) : colorForLevel(0);
+  const compactScaleLabels = th
+    ? ['ปกติ', 'เฝ้าระวัง', 'ระดับนี้', 'มาก', 'สูงสุด']
+    : ['Normal', 'Watch', 'Current', 'High', 'Extreme'];
 
   if (forecast.length === 0) {
     return (
       <View>
-        {ProvinceRow}
         <ScaledText style={[styles.emptyText, { color: muted }]}>
           {th ? 'ยังไม่มีพยากรณ์ล่วงหน้าในขณะนี้' : 'No forward outlook available yet'}
         </ScaledText>
-        {current?.available && (
-          <CurrentChip th={th} value={current.valueText} src={curSrc}
-            active={selectedWeek === 1} onPress={() => onSelect(1)} isDarkMode={isDarkMode} />
-        )}
       </View>
     );
   }
 
-  const peakColor = peak ? colorForLevel(peak.level) : muted;
-  const peakBand = peak ? (th ? HEAT_LEVELS[peak.level].labelTh : HEAT_LEVELS[peak.level].labelEn) : '';
-
   return (
     <View>
-      {ProvinceRow}
+      <ScaledText style={[styles.sectionKicker, { color: muted }]} numberOfLines={1}>
+        {th ? 'ไทม์ไลน์ความเสี่ยง' : 'Risk timeline'}
+      </ScaledText>
+
       {/* Narrative headline */}
       <View style={styles.headRow}>
         <ScaledText style={[styles.headline, { color: textColor }]} numberOfLines={1}>{headline}</ScaledText>
@@ -116,72 +114,79 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect, provinceName }: 
       </View>
       <ScaledText style={[styles.dir, { color: muted }]}>{dirText}</ScaledText>
 
-      {/* Peak chip — only when there's a meaningful peak */}
-      {peak && peak.level >= 1 && (
-        <View style={[styles.peak, { backgroundColor: peakColor + '22' }]}>
-          <View style={[styles.peakDot, { backgroundColor: peakColor }]} />
-          <View style={{ flex: 1 }}>
-            <ScaledText style={[styles.peakTop, { color: peakColor }]} numberOfLines={1}>
-              {th ? `เสี่ยงสูงสุด สัปดาห์ที่ ${peak.week} · ${peak.valueText}` : `Peak: week ${peak.week} · ${peak.valueText}`}
-            </ScaledText>
-            <ScaledText style={[styles.peakSub, { color: muted }]} numberOfLines={1}>
-              {peakBand} · {formatWeekRange(peak.week, th ? 'th' : 'en')}
-            </ScaledText>
-          </View>
-        </View>
-      )}
-
       {/* Weeks 2-4 trend chart */}
-      <View style={styles.chartWrap}>
+      <View
+        style={[
+          styles.chartWrap,
+          {
+            borderColor: accent + '33',
+            backgroundColor: isDarkMode ? 'rgba(127,163,200,0.08)' : 'rgba(22,50,79,0.045)',
+          },
+        ]}
+      >
         <OutlookChart weeks={forecastAll} selectedWeek={selectedWeek} onSelect={onSelect} />
       </View>
 
-      {/* Current week — demoted to a small tappable chip */}
-      {current?.available && (
-        <CurrentChip th={th} value={current.valueText} src={curSrc}
-          active={selectedWeek === 1} onPress={() => onSelect(1)} isDarkMode={isDarkMode} />
+      {selected && (
+        <View
+          style={[
+            styles.plan,
+            {
+              borderColor: selectedColor + '66',
+              backgroundColor: isDarkMode ? selectedColor + '22' : selectedBand.bg,
+            },
+          ]}
+        >
+          <View style={styles.planHead}>
+            <View style={{ flex: 1 }}>
+              <ScaledText style={[styles.planKicker, { color: muted }]} numberOfLines={1}>
+                {th ? `แผนรับมือ · สัปดาห์ที่ ${selected.week}` : `Action plan · week ${selected.week}`}
+              </ScaledText>
+              <ScaledText style={[styles.planTitle, { color: textColor }]} numberOfLines={1}>
+                {th ? selectedBand.labelTh : selectedBand.labelEn}
+              </ScaledText>
+            </View>
+          </View>
+
+          <RiskGauge
+            level={selected.level}
+            valueText={selectedHumanText}
+            footnote={selectedFootnote}
+            showHeader={false}
+            showScaleLabels
+            scaleLabels={compactScaleLabels}
+          />
+
+          <View style={styles.actions}>
+            {selectedGuidance.actions.slice(0, selectedRisk === 'High' ? 3 : 2).map((action) => (
+              <View key={action} style={styles.actionRow}>
+                <View style={[styles.actionDot, { backgroundColor: selectedColor }]} />
+                <ScaledText style={[styles.actionText, { color: textColor }]}>
+                  {action}
+                </ScaledText>
+              </View>
+            ))}
+          </View>
+        </View>
       )}
     </View>
   );
 }
 
-function CurrentChip({ th, value, src, active, onPress, isDarkMode }: {
-  th: boolean; value: string; src: string; active: boolean; onPress: () => void; isDarkMode: boolean;
-}) {
-  const base = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
-  const activeBg = isDarkMode ? 'rgba(59,130,246,0.22)' : 'rgba(59,130,246,0.14)';
-  const color = isDarkMode ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
-  return (
-    <TouchableOpacity
-      style={[styles.curChip, { backgroundColor: active ? activeBg : base }]}
-      onPress={onPress}
-      activeOpacity={0.75}
-      accessibilityRole="button"
-      accessibilityLabel={th ? 'ดูสภาพอากาศสัปดาห์นี้' : 'View this week'}
-    >
-      <ScaledText style={[styles.curText, { color }]} numberOfLines={1}>
-        {`📍 ${th ? 'สัปดาห์นี้' : 'This week'}: ${value} · ${src}`}
-      </ScaledText>
-      <ScaledText style={[styles.curText, { color }]}>›</ScaledText>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  provRow: { flexDirection: 'row', alignItems: 'baseline', gap: 5, marginBottom: 6 },
-  pin: { fontSize: 13 },
-  prov: { fontSize: 17, fontFamily: FontFamily.display, fontWeight: '800', letterSpacing: -0.3 },
-  provHint: { fontSize: 10.5, fontFamily: FontFamily.body },
+  sectionKicker: { fontSize: 11, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginBottom: 3 },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headline: { fontSize: 21, fontFamily: FontFamily.display, fontWeight: '800', letterSpacing: -0.4 },
-  arrow: { fontSize: 22, fontWeight: '800' },
+  headline: { fontSize: 28, lineHeight: 34, fontFamily: FontFamily.display, fontWeight: '900' },
+  arrow: { fontSize: 28, lineHeight: 34, fontWeight: '800' },
   dir: { fontSize: 12, fontFamily: FontFamily.bodyMedium, marginTop: 1 },
-  peak: { flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 12, padding: 9, marginTop: 10 },
-  peakDot: { width: 10, height: 10, borderRadius: 5 },
-  peakTop: { fontSize: 12.5, fontFamily: FontFamily.bodySemi, fontWeight: '700' },
-  peakSub: { fontSize: 10, fontFamily: FontFamily.body, marginTop: 1 },
-  chartWrap: { marginTop: 10 },
-  curChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderRadius: 10, paddingVertical: 7, paddingHorizontal: 11, marginTop: 10 },
-  curText: { fontSize: 11, fontFamily: FontFamily.bodyMedium, fontWeight: '600' },
+  chartWrap: { marginTop: 12, borderRadius: 14, borderWidth: 1, paddingTop: 10, paddingHorizontal: 10, paddingBottom: 8 },
   emptyText: { fontSize: 12, fontFamily: FontFamily.body, paddingVertical: 14, textAlign: 'center' },
+  plan: { marginTop: 12, borderRadius: 14, borderWidth: 1, padding: 11 },
+  planHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  planKicker: { fontSize: 10.5, fontFamily: FontFamily.bodyMedium },
+  planTitle: { fontSize: 18, fontFamily: FontFamily.display, fontWeight: '800' },
+  actions: { gap: 7, marginTop: 8 },
+  actionRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  actionDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, flexShrink: 0 },
+  actionText: { flex: 1, fontSize: 12.5, lineHeight: 18, fontFamily: FontFamily.bodyMedium },
 });

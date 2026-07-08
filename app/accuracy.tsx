@@ -14,7 +14,13 @@ import { useRouter } from 'expo-router';
 import { Colors, FontFamily, GlassStyle } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { loadVerification, formatGeneratedAt, type VerificationData } from '@/services/forecastService';
+import {
+  loadVerification,
+  formatGeneratedAt,
+  hasVerificationMetrics,
+  pendingWeeksRemaining,
+  type VerificationData,
+} from '@/services/forecastService';
 
 const HIT = '#4ade80';
 const NEAR = '#facc15';
@@ -34,7 +40,7 @@ export default function AccuracyScreen() {
     let active = true;
     loadVerification().then((d) => {
       if (!active) return;
-      const meaningful = d && (d.bss !== undefined || (d.weeks && d.weeks.length > 0));
+      const meaningful = hasVerificationMetrics(d);
       setData(d);
       setStatus(meaningful ? 'ready' : 'empty');
     }).catch(() => active && setStatus('empty'));
@@ -42,6 +48,22 @@ export default function AccuracyScreen() {
   }, []);
 
   const muted = theme.textMuted ?? theme.textSecondary;
+  const pending = data?.pending;
+  const waitWeeks = pendingWeeksRemaining(pending);
+  const emptyHeadline = pending?.state === 'ready_to_score'
+    ? (th ? 'พร้อมคำนวณผลแล้ว' : 'Ready to score')
+    : (th ? 'กำลังสะสมผลการทำนาย' : 'Track record is building');
+  const emptyBody = pending?.state === 'ready_to_score'
+    ? (
+      th
+        ? 'forecast window ปิดแล้ว แต่ backend ยังต้องรันรอบ scoring อีกครั้งเพื่ออัปเดตชาร์ตความแม่นยำ'
+        : 'Forecast windows have closed, but the backend still needs one scoring run to publish the verified accuracy charts.'
+    )
+    : (
+      th
+        ? 'โมเดลรันทุกสัปดาห์ ระบบกำลังเก็บผลทำนายเทียบกับสภาพอากาศที่เกิดจริง เพื่อรายงานความแม่นยำที่นี่เร็วๆ นี้'
+        : 'The model runs weekly. We are accumulating predictions vs. what actually happened, and will report verified accuracy here soon.'
+    );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
@@ -65,13 +87,28 @@ export default function AccuracyScreen() {
           <View style={[styles.card, glass]}>
             <ScaledText style={[styles.bigEmoji]}>📊</ScaledText>
             <ScaledText style={[styles.emptyTitle, { color: theme.text }]}>
-              {th ? 'กำลังสะสมผลการทำนาย' : 'Track record is building'}
+              {emptyHeadline}
             </ScaledText>
             <ScaledText style={[styles.emptyBody, { color: muted }]}>
-              {th
-                ? 'โมเดลรันทุกสัปดาห์ ระบบกำลังเก็บผลทำนายเทียบกับสภาพอากาศที่เกิดจริง เพื่อรายงานความแม่นยำที่นี่เร็วๆ นี้'
-                : 'The model runs weekly. We are accumulating predictions vs. what actually happened, and will report verified accuracy here soon.'}
+              {emptyBody}
             </ScaledText>
+            {pending?.latest_observed_date && (
+              <ScaledText style={[styles.emptyMeta, { color: muted }]}>
+                {th ? 'ข้อมูลจริงล่าสุดถึง' : 'Latest observed data:'} {pending.latest_observed_date}
+              </ScaledText>
+            )}
+            {pending?.next_window_close && pending?.next_lead && (
+              <ScaledText style={[styles.emptyMeta, { color: muted }]}>
+                {th
+                  ? `ผลรอบแรกสุดจะเริ่มเทียบได้เมื่อปิดหน้าต่าง lead ${pending.next_lead} วันที่ ${pending.next_window_close}`
+                  : `The earliest verified result becomes scorable when lead ${pending.next_lead} closes on ${pending.next_window_close}.`}
+              </ScaledText>
+            )}
+            {waitWeeks && pending?.state !== 'ready_to_score' && (
+              <ScaledText style={[styles.emptyMeta, { color: muted }]}>
+                {th ? `คาดว่ารออีกราว ${waitWeeks} สัปดาห์` : `Estimated wait: about ${waitWeeks} more week${waitWeeks > 1 ? 's' : ''}.`}
+              </ScaledText>
+            )}
           </View>
         )}
 
@@ -218,5 +255,6 @@ const styles = StyleSheet.create({
   bigEmoji: { fontSize: 40, textAlign: 'center', marginBottom: 6 },
   emptyTitle: { fontSize: 16, fontFamily: FontFamily.display, fontWeight: '700', textAlign: 'center' },
   emptyBody: { fontSize: 12, fontFamily: FontFamily.body, textAlign: 'center', marginTop: 8, lineHeight: 18 },
+  emptyMeta: { fontSize: 11, fontFamily: FontFamily.body, textAlign: 'center', marginTop: 8, lineHeight: 16 },
   asof: { fontSize: 10, textAlign: 'center', marginTop: 4 },
 });

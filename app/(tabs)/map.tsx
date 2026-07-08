@@ -2,23 +2,29 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, GlassStyle, FontFamily, useResponsive } from '@/constants/theme';
-import { levelFromRiskLevel, type HeatLevel } from '@/constants/heatRisk';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { useSettings } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { MapGrid, generateThailandGrid, normalizeProvinceName, type GridCell, type Severity, type ProvinceRisk } from '@/components/map';
 import { useLocation } from '@/hooks/useLocation';
 import { ScaledText } from '@/components/ui/ScaledText';
-import { getWeekData, getProvinceOutlook, formatGeneratedAt, alertTierFromRiskLevel, alertTierColor, type MapForecastPoint, type OutlookPoint } from '@/services/forecastService';
+import {
+  getWeekData,
+  getProvinceOutlook,
+  formatGeneratedAt,
+  formatForecastDate,
+  alertTierFromRiskLevel,
+  alertTierColor,
+  type MapForecastPoint,
+  type OutlookPoint,
+} from '@/services/forecastService';
 import { getProvinces, type Province } from '@/services/provincesService';
 import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPanel';
 import { WeekSegmentedControl } from '@/components/map/WeekSegmentedControl';
 import { OutlookSummary } from '@/components/map/OutlookSummary';
 import { ModelBadge } from '@/components/map/ModelBadge';
-import { RiskGauge } from '@/components/map/RiskGauge';
 import { useRouter } from 'expo-router';
-import { guidanceFor } from '@/constants/riskGuidance';
-import { formatWeekRange } from '@/utils/bangkokTime';
+import { reverseGeocodeAdministrativeArea, type UserAdministrativeArea } from '@/services/reverseGeocode';
 
 // Nearest province point to a coordinate (squared distance is enough for ranking).
 const nearestPoint = (lat: number, lng: number, points: MapForecastPoint[]): MapForecastPoint | null => {
@@ -34,7 +40,7 @@ const nearestPoint = (lat: number, lng: number, points: MapForecastPoint[]): Map
 };
 
 export default function MapScreen() {
-  const { isDarkMode, t, language } = useSettings();
+  const { isDarkMode, language } = useSettings();
   const router = useRouter();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
   const glass = GlassStyle[isDarkMode ? 'dark' : 'light'];
@@ -49,6 +55,7 @@ export default function MapScreen() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [selectedProvince, setSelectedProvince] = useState<Province | null>(null);
   const provincesRef = useRef<Province[]>([]);
+  const [userArea, setUserArea] = useState<UserAdministrativeArea | null>(null);
 
   // Default to the first S2S forecast week — the hero leads with the model's
   // outlook (weeks 2-4), not the current week.
@@ -168,41 +175,6 @@ export default function MapScreen() {
     return () => { active = false; };
   }, [myProvince, provinces]);
 
-  // A box around the user's province for the mini map. Thailand is a tall
-  // country; framing all of it in a short, wide card forces a huge zoom-out
-  // (you'd see half the region). Zooming to the province + neighbours fits a
-  // mobile card cleanly and reads as "your area".
-  const provinceBox = useMemo(() => {
-    if (!myProvince) return null;
-    return {
-      south: myProvince.lat - 1.7, north: myProvince.lat + 1.7,
-      west: myProvince.lon - 2.3, east: myProvince.lon + 2.3,
-    };
-  }, [myProvince]);
-
-  const dataReady = status === 'ready';
-  const myProvincePoint = useMemo(
-    () => (myProvince ? mapPoints.find((p) => p.province_id === myProvince.id) ?? null : null),
-    [myProvince, mapPoints],
-  );
-
-  const riskPct = dataReady && myProvincePoint && myProvincePoint.probability !== undefined
-    ? Math.round(myProvincePoint.probability * 100) : null;
-  const apparentTempC = dataReady && myProvincePoint?.apparent_temp_c !== undefined
-    ? myProvincePoint.apparent_temp_c : null;
-
-  const weekSource = (mapPoints[0]?.source ?? null) as 's2s' | 'open-meteo' | null;
-  const isLiveForecast = weekSource === 'open-meteo';
-
-  const gaugeLevel: HeatLevel | null =
-    !dataReady || !myProvincePoint ? null
-    : myProvincePoint.heat_level !== undefined ? (myProvincePoint.heat_level as HeatLevel)
-    : levelFromRiskLevel(myProvincePoint.risk_level);
-  const gaugeValueText = apparentTempC !== null ? `${apparentTempC}°C` : riskPct !== null ? `${riskPct}%` : '';
-  const gaugeFootnote = isLiveForecast
-    ? (th ? 'อุณหภูมิสัมผัสสูงสุด · Open-Meteo' : 'Peak apparent temp · Open-Meteo')
-    : (th ? 'ความน่าจะเป็นความเสี่ยง · โมเดล S2S' : 'Risk probability · S2S model');
-
   const handleGetLocation = useCallback(async () => {
     if (locationStatus === 'granted') { await getCurrentLocation(); }
     else { const ok = await requestPermission(); if (ok) await getCurrentLocation(); }
@@ -218,14 +190,42 @@ export default function MapScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!userLocation) {
+      setUserArea(null);
+      return;
+    }
+
+    let active = true;
+    reverseGeocodeAdministrativeArea(userLocation.latitude, userLocation.longitude)
+      .then((area) => { if (active) setUserArea(area); })
+      .catch(() => { if (active) setUserArea({ district: null, province: null, source: 'none' }); });
+
+    return () => { active = false; };
+  }, [userLocation]);
+
   const locationCoords = userLocation
     ? { latitude: userLocation.latitude, longitude: userLocation.longitude } : null;
 
   const asOf = mapGeneratedAt ? formatGeneratedAt(mapGeneratedAt, th ? 'th' : 'en') : '';
-  const weekRangeLabel = formatWeekRange(selectedWeek, th ? 'th' : 'en');
-  const sourceLabel = !dataReady ? '' : isLiveForecast
-    ? (th ? 'พยากรณ์อากาศจริง' : 'live forecast')
-    : (th ? 'โมเดล S2S' : 'S2S model');
+  const nationalOverview = useMemo(() => {
+    let warning = 0;
+    let watch = 0;
+    let soonest: string | null = null;
+    for (const point of mapPoints) {
+      const tier = alertTierFromRiskLevel(point.risk_level);
+      if (tier === 'warning') warning++;
+      else if (tier === 'watch') watch++;
+      if (soonest === null || point.target_date < soonest) soonest = point.target_date;
+    }
+    return { warning, watch, soonest };
+  }, [mapPoints]);
+  const displayProvince = userArea?.province ?? (myProvince ? (th ? myProvince.name_th : myProvince.name_en) : null);
+  const userAreaPrimary = userArea?.district && displayProvince
+    ? (th ? `อ.${userArea.district} · จ.${displayProvince}` : `${userArea.district}, ${displayProvince}`)
+    : displayProvince
+      ? (th ? `พื้นที่ใกล้เคียง · จ.${displayProvince}` : `Nearby area · ${displayProvince}`)
+      : (th ? 'กำลังค้นหาจาก GPS' : 'Finding GPS area');
 
   // ── Expanded full-screen map ────────────────────────────────────────────────
   if (mapExpanded) {
@@ -298,6 +298,52 @@ export default function MapScreen() {
           {asOf ? `${th ? 'ข้อมูล ณ' : 'as of'} ${asOf}` : (th ? 'พยากรณ์รายจังหวัด' : 'province-level forecast')}
         </ScaledText>
 
+        {/* Map card — first in the LINE flow, so people see the geography immediately. */}
+        <View style={[styles.card, glass, styles.mapCard]}>
+          <View style={styles.locationStrip}>
+            <View style={[styles.locationDot, { backgroundColor: theme.primary }]} />
+            <View style={styles.locationCopy}>
+              <ScaledText style={[styles.locationLabel, { color: theme.textMuted }]} numberOfLines={1}>
+                {th ? 'ตำแหน่งของคุณ' : 'Your location'}
+              </ScaledText>
+              <ScaledText style={[styles.locationText, { color: theme.text }]} numberOfLines={1}>
+                {userAreaPrimary}
+              </ScaledText>
+            </View>
+          </View>
+          <View style={styles.mapCardHead}>
+            <ScaledText style={[styles.cardTitle, { color: theme.text }]}>
+              {th ? 'แผนที่ความเสี่ยงทั้งประเทศ' : 'National risk map'}
+            </ScaledText>
+            <ScaledText style={[styles.mapHint, { color: theme.textMuted }]}>
+              {th ? `สัปดาห์ที่ ${selectedWeek} · แตะเพื่อขยาย` : `Week ${selectedWeek} · tap to expand`}
+            </ScaledText>
+          </View>
+          <View style={styles.mapMiniWrap}>
+            <MapGrid
+              gridData={gridData}
+              userLocation={locationCoords}
+              isDarkMode={isDarkMode}
+              neutral={status !== 'ready'}
+              provinceRisk={provinceRisk}
+              fitPaddingTop={12}
+              style={styles.mapMini}
+            />
+            {/* Tap-catcher: whole mini-map expands; also stops Leaflet eating page scroll */}
+            <TouchableOpacity
+              style={styles.mapTapCatcher}
+              activeOpacity={0.85}
+              onPress={() => setMapExpanded(true)}
+              accessibilityRole="button"
+              accessibilityLabel={th ? 'ขยายแผนที่' : 'Expand map'}
+            >
+              <View style={[styles.expandChip, glass]}>
+                <IconSymbol size={16} name="open_in_full" color={theme.text} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* HERO — forecast-first outlook (weeks 2-4 = S2S model) */}
         <View style={[styles.card, glass]}>
           {outlook.length > 0 ? (
@@ -315,83 +361,54 @@ export default function MapScreen() {
         {/* Model trust badge → accuracy screen */}
         <ModelBadge onPress={() => router.push('/accuracy' as any)} />
 
-        {/* Selected-week detail */}
+        {/* National overview — kept at the bottom so it supports the map without competing with the user's area. */}
         <View style={[styles.card, glass]}>
-          <ScaledText style={[styles.detailHead, { color: theme.textMuted }]} numberOfLines={1}>
-            {(th ? `สัปดาห์ที่ ${selectedWeek}` : `Week ${selectedWeek}`)} · {weekRangeLabel}{sourceLabel ? ` · ${sourceLabel}` : ''}
+          <ScaledText style={[styles.overviewTitle, { color: theme.textMuted }]} numberOfLines={2}>
+            {th
+              ? `ภาพรวมทั้งประเทศ${nationalOverview.soonest ? ` · ${formatForecastDate(nationalOverview.soonest, 'th')}` : ''}`
+              : `National overview${nationalOverview.soonest ? ` · ${formatForecastDate(nationalOverview.soonest, 'en')}` : ''}`}
           </ScaledText>
 
-          {gaugeLevel !== null ? (
-            <RiskGauge level={gaugeLevel} valueText={gaugeValueText} footnote={gaugeFootnote} />
-          ) : (
-            <View style={styles.detailStatus}>
-              {status === 'loading' && <ActivityIndicator size="small" color={theme.primary} />}
-              <ScaledText style={[styles.detailStatusText, { color: theme.textMuted }]}>
-                {status === 'loading' ? t('loading')
-                  : status === 'error' ? t('loadFailed')
-                  : status === 'empty' ? (th ? 'ยังไม่มีพยากรณ์สำหรับสัปดาห์นี้' : 'No forecast for this week yet')
-                  : t('dataUnavailable')}
+          {status === 'loading' ? (
+            <View style={styles.overviewState}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <ScaledText style={[styles.overviewStateText, { color: theme.textMuted }]}>
+                {th ? 'กำลังโหลดภาพรวมประเทศ' : 'Loading national overview'}
               </ScaledText>
-              {(status === 'error' || status === 'empty') && (
-                <TouchableOpacity onPress={loadForecastMap} style={[styles.retryBtn, { backgroundColor: theme.primary }]}>
-                  <ScaledText style={styles.retryText}>{t('retry')}</ScaledText>
-                </TouchableOpacity>
-              )}
             </View>
-          )}
-
-          {dataReady && myProvincePoint && (
-            <ScaledText style={[styles.guide, { color: theme.textMuted }]} numberOfLines={3}>
-              {guidanceFor(myProvincePoint.risk_level, language).whatsHappening}
-            </ScaledText>
-          )}
-          {dataReady && myProvincePoint && (
-            <TouchableOpacity
-              style={[styles.cta, { backgroundColor: alertTierColor(alertTierFromRiskLevel(myProvincePoint.risk_level), isDarkMode) + '22' }]}
-              onPress={() => router.push({ pathname: '/safety' as any, params: { risk: myProvincePoint!.risk_level } })}
-              accessibilityRole="button" accessibilityLabel={th ? 'ดูคู่มือความปลอดภัย' : 'View safety guide'}
-            >
-              <ScaledText style={[styles.ctaText, { color: alertTierColor(alertTierFromRiskLevel(myProvincePoint.risk_level), isDarkMode) }]}>
-                {'▸ ' + (th ? 'ดูวิธีรับมือ' : 'See safety guide')}
-              </ScaledText>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Map card — tap to expand full-screen */}
-        <View style={[styles.card, glass, styles.mapCard]}>
-          <View style={styles.mapCardHead}>
-            <ScaledText style={[styles.cardTitle, { color: theme.text }]}>
-              {myProvince ? (th ? `แผนที่ · ${myProvince.name_th}` : `Map · ${myProvince.name_en}`) : (th ? 'แผนที่' : 'Map')}
-            </ScaledText>
-            <ScaledText style={[styles.mapHint, { color: theme.textMuted }]}>
-              {th ? `สัปดาห์ที่ ${selectedWeek} · แตะดูทั้งประเทศ` : `Week ${selectedWeek} · tap for national`}
-            </ScaledText>
-          </View>
-          <View style={styles.mapMiniWrap}>
-            <MapGrid
-              gridData={gridData}
-              userLocation={locationCoords}
-              isDarkMode={isDarkMode}
-              neutral={status !== 'ready'}
-              provinceRisk={provinceRisk}
-              fitPaddingTop={12}
-              focusBounds={provinceBox}
-              style={styles.mapMini}
-            />
-            {/* Tap-catcher: whole mini-map expands; also stops Leaflet eating page scroll */}
-            <TouchableOpacity
-              style={styles.mapTapCatcher}
-              activeOpacity={0.85}
-              onPress={() => setMapExpanded(true)}
-              accessibilityRole="button"
-              accessibilityLabel={th ? 'ขยายแผนที่' : 'Expand map'}
-            >
-              <View style={[styles.expandChip, glass]}>
-                <IconSymbol size={16} name="open_in_full" color={theme.text} />
+          ) : status === 'ready' ? (
+            nationalOverview.warning > 0 || nationalOverview.watch > 0 ? (
+              <View style={styles.overviewRow}>
+                <View style={[styles.overviewChip, { borderColor: alertTierColor('warning', isDarkMode) }]}>
+                  <ScaledText style={[styles.overviewNum, { color: alertTierColor('warning', isDarkMode) }]}>
+                    {nationalOverview.warning}
+                  </ScaledText>
+                  <ScaledText style={[styles.overviewLabel, { color: alertTierColor('warning', isDarkMode) }]}>
+                    {th ? 'เตือนภัย' : 'Warning'}
+                  </ScaledText>
+                </View>
+                <View style={[styles.overviewChip, { borderColor: alertTierColor('watch', isDarkMode) }]}>
+                  <ScaledText style={[styles.overviewNum, { color: alertTierColor('watch', isDarkMode) }]}>
+                    {nationalOverview.watch}
+                  </ScaledText>
+                  <ScaledText style={[styles.overviewLabel, { color: alertTierColor('watch', isDarkMode) }]}>
+                    {th ? 'เฝ้าระวัง' : 'Watch'}
+                  </ScaledText>
+                </View>
               </View>
-            </TouchableOpacity>
-          </View>
+            ) : (
+              <View style={[styles.allClearRow, { borderColor: alertTierColor('none', isDarkMode) }]}>
+                <IconSymbol name="check_circle" size={15} color={alertTierColor('none', isDarkMode)} />
+                <ScaledText style={[styles.allClearText, { color: alertTierColor('none', isDarkMode) }]}>
+                  {th ? 'ปกติทุกจังหวัด' : 'All provinces normal'}
+                </ScaledText>
+              </View>
+            )
+          ) : (
+            <ScaledText style={[styles.overviewStateText, { color: theme.textMuted }]}>
+              {th ? 'ยังโหลดภาพรวมประเทศไม่ได้' : 'National overview unavailable'}
+            </ScaledText>
+          )}
         </View>
       </ScrollView>
 
@@ -403,24 +420,21 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 12, paddingBottom: 110, gap: 10 },
-  title: { fontSize: 22, fontFamily: FontFamily.display, fontWeight: '800', letterSpacing: -0.4 },
+  title: { fontSize: 22, fontFamily: FontFamily.display, fontWeight: '800' },
   subtitle: { fontSize: 11.5, fontFamily: FontFamily.bodyMedium, marginTop: 1, marginBottom: 2 },
   card: { borderRadius: 18, padding: 14 },
   cardTitle: { fontSize: 13, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginBottom: 6 },
   chartLoading: { height: 150, alignItems: 'center', justifyContent: 'center' },
-  detailHead: { fontSize: 11, fontFamily: FontFamily.bodyMedium, marginBottom: 8 },
-  detailStatus: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
-  detailStatusText: { fontSize: 13, fontFamily: FontFamily.bodyMedium, flexShrink: 1 },
-  retryBtn: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999 },
-  retryText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  guide: { fontSize: 11.5, fontFamily: FontFamily.body, marginTop: 10, lineHeight: 16 },
-  cta: { marginTop: 8, paddingVertical: 6, paddingHorizontal: 11, borderRadius: 9, alignSelf: 'flex-start' },
-  ctaText: { fontSize: 11.5, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
   // map card
   mapCard: { padding: 10 },
+  locationStrip: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 10, paddingHorizontal: 2 },
+  locationDot: { width: 9, height: 9, borderRadius: 5 },
+  locationCopy: { flex: 1, minWidth: 0 },
+  locationLabel: { fontSize: 10.5, fontFamily: FontFamily.bodyMedium, marginBottom: 1 },
+  locationText: { fontSize: 17, fontFamily: FontFamily.display, fontWeight: '800' },
   mapCardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, paddingHorizontal: 2 },
   mapHint: { fontSize: 10, fontFamily: FontFamily.body },
-  mapMiniWrap: { height: 230, borderRadius: 12, overflow: 'hidden', position: 'relative' },
+  mapMiniWrap: { height: 300, borderRadius: 12, overflow: 'hidden', position: 'relative' },
   mapMini: { flex: 1 },
   mapTapCatcher: { ...StyleSheet.absoluteFillObject, alignItems: 'flex-end', justifyContent: 'flex-start', padding: 8 },
   expandChip: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
@@ -434,4 +448,13 @@ const styles = StyleSheet.create({
   provincePanel: { position: 'absolute', left: 12, right: 12, bottom: 96, zIndex: 32 },
   closePanelBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, marginBottom: 6 },
   closePanelText: { fontSize: 12, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  overviewTitle: { fontSize: 12, lineHeight: 17, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginBottom: 9 },
+  overviewRow: { flexDirection: 'row', gap: 10 },
+  overviewChip: { flex: 1, alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingVertical: 11 },
+  overviewNum: { fontSize: 30, lineHeight: 34, fontFamily: FontFamily.display, fontWeight: '900' },
+  overviewLabel: { fontSize: 12, lineHeight: 17, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginTop: 2 },
+  overviewState: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  overviewStateText: { fontSize: 12, lineHeight: 18, fontFamily: FontFamily.bodyMedium },
+  allClearRow: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12 },
+  allClearText: { fontSize: 13, lineHeight: 18, fontFamily: FontFamily.bodySemi, fontWeight: '800' },
 });

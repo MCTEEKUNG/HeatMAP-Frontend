@@ -1,4 +1,5 @@
 import type { MapForecastPoint, ProvinceForecastDay, RiskLevel } from './forecastService';
+import { fetchJsonWithFallback } from './contractFetch';
 
 interface RawForecast {
   lead_weeks: number;
@@ -122,10 +123,9 @@ let _cache: Promise<Contract> | null = null;
 const FORECAST_URL = process.env.EXPO_PUBLIC_FORECAST_URL || '/forecast_provinces.json';
 export function loadContract(): Promise<Contract> {
   if (!_cache) {
-    _cache = fetch(FORECAST_URL).then(async (r) => {
-      if (!r.ok) throw new Error(`โหลด forecast ไม่สำเร็จ (${r.status})`);
-      return assertContract((await r.json()) as Contract);
-    }).catch((e) => { _cache = null; throw e; });
+    _cache = fetchJsonWithFallback<Contract>(FORECAST_URL)
+      .then((contract) => assertContract(contract))
+      .catch((e) => { _cache = null; throw e; });
   }
   return _cache;
 }

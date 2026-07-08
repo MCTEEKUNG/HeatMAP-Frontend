@@ -1,4 +1,5 @@
 import { loadContract, mapPoints, mapPointsForWeek, provinceDays } from './deepseekContract';
+import { fetchJsonWithFallback } from './contractFetch';
 import type { Province } from './provincesService';
 import { getWeek1Map } from './openMeteoService';
 import type { HeatLevel } from '@/constants/heatRisk';
@@ -119,6 +120,8 @@ export interface OutlookPoint {
   valueText: string;
   /** Raw numeric for ranking/trend: probability percent (S2S) or apparent °C (live). */
   value: number | null;
+  /** S2S only: model risk relative to the province's normal baseline. */
+  ratioVsNormal?: number;
   source: 's2s' | 'open-meteo' | null;
   /** false when this week is beyond the model horizon / has no point for the province. */
   available: boolean;
@@ -159,7 +162,8 @@ export async function getProvinceOutlook(
       pt.apparent_temp_c !== undefined ? `${pt.apparent_temp_c}°C`
       : pt.probability !== undefined ? `${Math.round(pt.probability * 100)}%`
       : '';
-    out.push({ week, startISO, endISO, level, valueText, value, source: pt.source ?? null, available: true });
+    const ratioVsNormal = Number.isFinite(pt.ratio_vs_normal) ? pt.ratio_vs_normal : undefined;
+    out.push({ week, startISO, endISO, level, valueText, value, ratioVsNormal, source: pt.source ?? null, available: true });
   }
   return out;
 }
@@ -174,16 +178,27 @@ export async function loadVerification(): Promise<VerificationData | null> {
   const url = process.env.EXPO_PUBLIC_VERIFICATION_URL
     || forecastUrl.replace(/forecast_provinces\.json$/, 'verification.json');
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return (await res.json()) as VerificationData;
+    return await fetchJsonWithFallback<VerificationData>(url);
   } catch {
     return null;
   }
 }
 
 /** Shape of verification.json (published by the backend verify scripts; phase 1.5). */
+export interface VerificationPendingData {
+  state?: 'building' | 'ready_to_score';
+  archived_forecasts?: number;
+  latest_observed_date?: string | null;
+  next_issue_date?: string;
+  next_lead?: number;
+  next_window_close?: string;
+  days_remaining?: number;
+  ready_issue_leads?: number;
+  reason?: string;
+}
+
 export interface VerificationData {
+  status?: 'building' | 'ready';
   generated_at?: string;
   period?: { start: string; end: string; weeks: number };
   /** Brier Skill Score vs climatology baseline (>0 = real skill). */
@@ -194,6 +209,22 @@ export interface VerificationData {
   per_lead?: { lead: number; bss: number }[];
   /** Reliability/calibration bins: predicted vs observed frequency. */
   calibration?: { predicted: number; observed: number }[];
+  /** Pending build metadata while operational track record is still accumulating. */
+  pending?: VerificationPendingData;
+}
+
+export function hasVerificationMetrics(data: VerificationData | null | undefined): boolean {
+  return Boolean(data && (
+    data.bss !== undefined
+    || (data.weeks && data.weeks.length > 0)
+    || (data.per_lead && data.per_lead.length > 0)
+    || (data.calibration && data.calibration.length > 0)
+  ));
+}
+
+export function pendingWeeksRemaining(pending: VerificationPendingData | null | undefined): number | null {
+  if (!pending || pending.days_remaining === undefined || pending.days_remaining === null) return null;
+  return Math.max(1, Math.ceil(pending.days_remaining / 7));
 }
 
 /**
@@ -335,13 +366,13 @@ export function isHistoricalRun(
   return ageDays > staleDays;
 }
 
-export function formatForecastDate(dateStr: string): string {
+export function formatForecastDate(dateStr: string, lang: 'th' | 'en' = 'en'): string {
   // Parse as UTC to avoid the date shifting by one day in negative-offset timezones.
   // Dates from the server are plain YYYY-MM-DD strings (no time component), so we
   // append T00:00:00Z to force UTC interpretation before formatting.
   const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? `${dateStr}T00:00:00Z` : dateStr;
   const date = new Date(normalized);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

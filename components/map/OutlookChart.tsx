@@ -1,13 +1,9 @@
 /**
  * OutlookChart — the hero: a 4-week heat-risk trend for the user's province.
  *
- * Pure React Native (no SVG dependency): the container measures its own width
- * via onLayout, then dots are absolutely positioned by HeatRisk level (height)
- * and connected by thin rotated View segments so the trend reads at a glance.
- *
- * Height is driven by the canonical HeatRisk level (0-4) so live (°C) and S2S
- * (%) weeks share one consistent axis; the raw value is shown only as a label.
- * Tapping a week selects it (drives the detail card + map elsewhere).
+ * Pure React Native (no SVG dependency): the top chart shows whether the
+ * user's-area forecast signal rises or falls across the next weeks, then the
+ * buttons below let the user select a week for guidance.
  */
 
 import React, { useState } from 'react';
@@ -18,6 +14,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { formatWeekRange } from '@/utils/bangkokTime';
 import type { OutlookPoint } from '@/services/forecastService';
+import { humanRiskText } from './outlookCopy';
 
 interface Props {
   weeks: OutlookPoint[];
@@ -25,87 +22,151 @@ interface Props {
   onSelect: (week: 1 | 2 | 3 | 4) => void;
 }
 
-const PLOT_H = 108;      // plotting region height
-const Y_TOP = 28;        // highest a dot sits (level 4) — leaves room for value label
-const Y_BOTTOM = 88;     // lowest a dot sits (level 0)
-const DOT = 20;
+const CHART_H = 148;
+const Y_TOP = 42;
+const Y_BOTTOM = 92;
+const DOT = 18;
+const X_PAD = 36;
+
+const trendMetric = (point: OutlookPoint): number | null => {
+  if (!point.available) return null;
+  if (point.source === 's2s' && point.ratioVsNormal !== undefined) return point.ratioVsNormal;
+  return point.value;
+};
+
+const formatRatio = (value: number): string => {
+  if (value >= 10) return value.toFixed(0);
+  return value.toFixed(1).replace(/\.0$/, '');
+};
+
+const formatTrendValue = (point: OutlookPoint, th: boolean): string => {
+  const value = trendMetric(point);
+  if (value === null) return th ? 'รอข้อมูล' : 'n/a';
+  if (point.source === 'open-meteo') return `${Math.round(value)}°C`;
+  if (point.ratioVsNormal !== undefined) return th ? `${formatRatio(value)} เท่า` : `${formatRatio(value)}x`;
+  return th ? `เสี่ยง ${Math.round(value)}%` : `${Math.round(value)}% risk`;
+};
 
 export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
   const { isDarkMode, language } = useSettings();
   const lang = language as 'th' | 'en';
+  const th = lang === 'th';
   const [w, setW] = useState(0);
 
   const textColor = isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)';
   const muted = isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
   const ring = isDarkMode ? '#7FA3C8' : '#16324F';
-  const lineColor = isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.22)';
-
   const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
-
-  // x-centre of each of the 4 columns; y from level.
-  const n = weeks.length || 4;
-  const cx = (i: number) => (w / n) * i + w / n / 2;
-  const cy = (level: number) => Y_BOTTOM - (level / 4) * (Y_BOTTOM - Y_TOP);
-
-  // Line segments between consecutive AVAILABLE points.
-  const segments: { left: number; top: number; len: number; ang: number }[] = [];
+  const availableValues = weeks
+    .map((pt) => trendMetric(pt))
+    .filter((value): value is number => value !== null);
+  const peak = weeks.reduce<{ week: OutlookPoint['week']; value: number } | null>((best, pt) => {
+    const value = trendMetric(pt);
+    if (value === null) return best;
+    if (!best || value > best.value) return { week: pt.week, value };
+    return best;
+  }, null);
+  const minValue = availableValues.length ? Math.min(...availableValues) : 0;
+  const maxValue = availableValues.length ? Math.max(...availableValues) : 1;
+  const range = Math.max(1, maxValue - minValue);
+  const xFor = (index: number) => {
+    const count = Math.max(1, weeks.length);
+    const usableW = Math.max(1, w - X_PAD * 2);
+    return count === 1 ? w / 2 : X_PAD + (usableW / (count - 1)) * index;
+  };
+  const yFor = (value: number | null) => {
+    if (value === null) return (Y_TOP + Y_BOTTOM) / 2;
+    return Y_BOTTOM - ((value - minValue) / range) * (Y_BOTTOM - Y_TOP);
+  };
+  const segments: { left: number; top: number; len: number; ang: number; rising: boolean }[] = [];
   if (w > 0) {
     for (let i = 0; i < weeks.length - 1; i++) {
       const a = weeks[i];
       const b = weeks[i + 1];
-      if (!a.available || !b.available) continue;
-      const x1 = cx(i), y1 = cy(a.level), x2 = cx(i + 1), y2 = cy(b.level);
+      const aValue = trendMetric(a);
+      const bValue = trendMetric(b);
+      if (!a.available || !b.available || aValue === null || bValue === null) continue;
+      const x1 = xFor(i), y1 = yFor(aValue), x2 = xFor(i + 1), y2 = yFor(bValue);
       const dx = x2 - x1, dy = y2 - y1;
       const len = Math.sqrt(dx * dx + dy * dy);
       const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
-      segments.push({ left: (x1 + x2) / 2 - len / 2, top: (y1 + y2) / 2 - 1.5, len, ang });
+      segments.push({
+        left: (x1 + x2) / 2 - len / 2,
+        top: (y1 + y2) / 2 - 1.5,
+        len,
+        ang,
+        rising: bValue >= aValue,
+      });
     }
   }
 
   return (
-    <View style={styles.wrap} onLayout={onLayout}>
-      {/* Plot region */}
-      <View style={[styles.plot, { height: PLOT_H }]}>
-        {w > 0 && segments.map((s, i) => (
+    <View style={styles.wrap}>
+      <View style={styles.chartHead}>
+        <ScaledText style={[styles.chartTitle, { color: textColor }]} numberOfLines={1}>
+          {th ? 'เทียบกับค่าปกติ' : 'Compared with normal'}
+        </ScaledText>
+        <ScaledText style={[styles.chartHint, { color: muted }]} numberOfLines={1}>
+          {th ? 'ยิ่งสูง = เสี่ยงกว่าปกติ' : 'Higher = above normal risk'}
+        </ScaledText>
+      </View>
+
+      <View style={[styles.trendChart, { height: CHART_H }]} onLayout={onLayout}>
+        {w > 0 && segments.map((seg, i) => (
           <View
-            key={`seg-${i}`}
-            style={[styles.segment, {
-              width: s.len, left: s.left, top: s.top,
-              backgroundColor: lineColor,
-              transform: [{ rotate: `${s.ang}deg` }],
-            }]}
+            key={`trend-${i}`}
+            style={[
+              styles.trendSegment,
+              {
+                width: seg.len,
+                left: seg.left,
+                top: seg.top,
+                backgroundColor: seg.rising ? '#F39C2C' : '#4ade80',
+                transform: [{ rotate: `${seg.ang}deg` }],
+              },
+            ]}
           />
         ))}
 
         {w > 0 && weeks.map((pt, i) => {
-          const x = cx(i);
-          const y = cy(pt.level);
           const isActive = pt.week === selectedWeek;
+          const x = xFor(i);
+          const y = yFor(trendMetric(pt));
           const color = pt.available ? colorForLevel(pt.level) : 'rgba(148,163,184,0.5)';
+          const isPeak = peak?.week === pt.week;
           return (
-            <React.Fragment key={`node-${pt.week}`}>
-              {/* value label above dot */}
-              {pt.available && pt.valueText !== '' && (
-                <ScaledText
-                  style={[styles.value, { left: x - 30, top: y - 28, color: textColor }]}
-                  numberOfLines={1}
-                >
-                  {pt.valueText}
-                </ScaledText>
-              )}
-              {/* selected ring */}
-              {isActive && (
-                <View style={[styles.ring, { left: x - 15, top: y - 15, borderColor: ring }]} />
-              )}
-              {/* dot */}
-              <View
-                style={[styles.dot, {
-                  left: x - DOT / 2, top: y - DOT / 2,
-                  backgroundColor: color,
-                  borderStyle: pt.available ? 'solid' : 'dashed',
-                }]}
-              />
-            </React.Fragment>
+            <TouchableOpacity
+              key={`trend-point-${pt.week}`}
+              style={[
+                styles.trendPointHit,
+                { left: x - 36, top: y - 34 },
+              ]}
+              onPress={() => onSelect(pt.week)}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={`${lang === 'th' ? 'แนวโน้มสัปดาห์' : 'Trend week'} ${pt.week} ${formatTrendValue(pt, th)}`}
+            >
+              <ScaledText
+                style={[
+                  styles.pointValue,
+                  {
+                    color: isPeak ? '#fff' : textColor,
+                    backgroundColor: isPeak ? color : 'transparent',
+                    borderColor: isPeak ? color : 'transparent',
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {formatTrendValue(pt, th)}
+              </ScaledText>
+              <View style={[styles.pointRing, (isActive || isPeak) && { borderColor: isPeak ? color : ring, borderWidth: isPeak ? 3 : 2.5 }]}>
+                <View style={[styles.pointDot, { backgroundColor: color }]} />
+              </View>
+              <ScaledText style={[styles.pointWeek, { color: muted }]} numberOfLines={1}>
+                {lang === 'th' ? `สัปดาห์ ${pt.week}` : `W${pt.week}`}
+              </ScaledText>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -114,15 +175,19 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
       <View style={styles.labels}>
         {weeks.map((pt) => {
           const isActive = pt.week === selectedWeek;
-          const srcLive = pt.source === 'open-meteo';
-          const srcColor = !pt.available ? muted : srcLive ? '#4f9cf9' : '#E0922C';
-          const srcText = !pt.available
-            ? (lang === 'th' ? 'ยังไม่มี' : 'n/a')
-            : srcLive ? (lang === 'th' ? 'สด' : 'live') : 'S2S';
+          const humanText = humanRiskText(pt, lang === 'th');
           return (
             <TouchableOpacity
               key={`lab-${pt.week}`}
-              style={styles.cell}
+              style={[
+                styles.cell,
+                {
+                  backgroundColor: isActive
+                    ? (isDarkMode ? 'rgba(127,163,200,0.18)' : 'rgba(22,50,79,0.08)')
+                    : 'transparent',
+                  borderColor: isActive ? ring : 'transparent',
+                },
+              ]}
               onPress={() => onSelect(pt.week)}
               activeOpacity={0.7}
               accessibilityRole="button"
@@ -138,8 +203,8 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
               <ScaledText style={[styles.wdate, { color: muted }]} numberOfLines={1}>
                 {formatWeekRange(pt.week, lang)}
               </ScaledText>
-              <ScaledText style={[styles.wsrc, { color: srcColor }]} numberOfLines={1}>
-                {srcText}
+              <ScaledText style={[styles.wvalue, { color: pt.available ? colorForLevel(pt.level) : muted }]} numberOfLines={2}>
+                {humanText}
               </ScaledText>
             </TouchableOpacity>
           );
@@ -151,22 +216,31 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { width: '100%' },
-  plot: { position: 'relative', width: '100%' },
-  segment: { position: 'absolute', height: 3, borderRadius: 2 },
-  dot: {
-    position: 'absolute', width: DOT, height: DOT, borderRadius: DOT / 2,
-    borderWidth: 2, borderColor: '#fff',
+  chartHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 2 },
+  chartTitle: { fontSize: 12.5, lineHeight: 17, fontFamily: FontFamily.bodySemi, fontWeight: '800' },
+  chartHint: { flex: 1, textAlign: 'right', fontSize: 9.5, lineHeight: 13, fontFamily: FontFamily.bodyMedium },
+  trendChart: { position: 'relative', width: '100%', paddingHorizontal: 36 },
+  trendSegment: { position: 'absolute', height: 3, borderRadius: 2 },
+  trendPointHit: { position: 'absolute', width: 72, alignItems: 'center' },
+  pointValue: {
+    minWidth: 52,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    textAlign: 'center',
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: FontFamily.displaySemi,
+    fontWeight: '900',
   },
-  ring: {
-    position: 'absolute', width: 30, height: 30, borderRadius: 15, borderWidth: 2.5,
-  },
-  value: {
-    position: 'absolute', width: 60, textAlign: 'center',
-    fontSize: 13, fontFamily: FontFamily.displaySemi, fontWeight: '800',
-  },
-  labels: { flexDirection: 'row', marginTop: 4 },
-  cell: { flex: 1, alignItems: 'center', gap: 1, paddingVertical: 4, borderRadius: 8 },
-  wlab: { fontSize: 11, fontFamily: FontFamily.bodySemi },
-  wdate: { fontSize: 9, fontFamily: FontFamily.body },
-  wsrc: { fontSize: 8.5, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginTop: 1 },
+  pointRing: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginTop: 2, borderColor: 'transparent', borderWidth: 2.5 },
+  pointDot: { width: DOT, height: DOT, borderRadius: DOT / 2, borderWidth: 2, borderColor: '#fff' },
+  pointWeek: { fontSize: 9, lineHeight: 12, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginTop: 7 },
+  labels: { flexDirection: 'row', marginTop: 6, gap: 6 },
+  cell: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 8, paddingHorizontal: 3, borderRadius: 10, borderWidth: 1 },
+  wlab: { fontSize: 13, fontFamily: FontFamily.bodySemi },
+  wdate: { fontSize: 9.5, fontFamily: FontFamily.body },
+  wvalue: { fontSize: 15, lineHeight: 19, fontFamily: FontFamily.displaySemi, fontWeight: '900', marginTop: 3, textAlign: 'center' },
 });

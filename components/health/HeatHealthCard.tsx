@@ -11,6 +11,7 @@ import { alertTierFromRiskLevel, alertTierColor, type RiskLevel } from '@/servic
 export interface HeatHealthCardProps {
   risk: RiskLevel;
   compact?: boolean;
+  showStatusChip?: boolean;
 }
 
 const TIER_ICON: Record<RiskLevel, string> = {
@@ -27,7 +28,7 @@ const TIER_LABEL: Record<RiskLevel, { en: string; th: string }> = {
   Low:      { en: 'Low',      th: 'ต่ำ' },
 };
 
-export function HeatHealthCard({ risk, compact = false }: HeatHealthCardProps) {
+export function HeatHealthCard({ risk, compact = false, showStatusChip = true }: HeatHealthCardProps) {
   const router = useRouter();
   const { t, language, isDarkMode } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
@@ -53,13 +54,14 @@ export function HeatHealthCard({ risk, compact = false }: HeatHealthCardProps) {
       <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
 
       <View style={styles.body}>
-        {/* Status chip — the only "header" needed */}
-        <View style={[styles.chip, { borderColor: accentColor }]}>
-          <IconSymbol name={TIER_ICON[risk]} size={11} color={accentColor} />
-          <ScaledText style={[styles.chipText, { color: accentColor }]}>
-            {TIER_LABEL[risk][language]}
-          </ScaledText>
-        </View>
+        {showStatusChip && (
+          <View style={[styles.chip, { borderColor: accentColor }]}>
+            <IconSymbol name={TIER_ICON[risk]} size={11} color={accentColor} />
+            <ScaledText style={[styles.chipText, { color: accentColor }]}>
+              {TIER_LABEL[risk][language]}
+            </ScaledText>
+          </View>
+        )}
 
         {/* 1–2 key tips only, no section heading */}
         {tips.map((tip) => (

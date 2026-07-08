@@ -33,21 +33,11 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="alerts"
-        options={{
-          title: 'Alerts',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="notifications" color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
         name="safety"
         options={{
-          title: 'Safety',
+          title: 'Guide',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="shield.fill" color={color} />
+            <IconSymbol size={28} name="ac_unit" color={color} />
           ),
         }}
       />

@@ -22,14 +22,20 @@ interface Props {
   valueText: string;
   /** Small source/metric disclosure under the scale. */
   footnote?: string;
+  /** Hide the repeated value/band label when the surrounding card already states it. */
+  showHeader?: boolean;
+  /** Hide text labels in the scale when the card needs a lighter, non-repetitive read. */
+  showScaleLabels?: boolean;
+  /** Optional short labels for compact contexts, ordered by HeatRisk level 0-4. */
+  scaleLabels?: string[];
 }
 
-export function RiskGauge({ level, valueText, footnote }: Props) {
+export function RiskGauge({ level, valueText, footnote, showHeader = true, showScaleLabels = true, scaleLabels }: Props) {
   const { isDarkMode, language } = useSettings();
   const lang = language as 'th' | 'en';
 
-  const band = HEAT_LEVELS[level];
   const bandColor = HeatRiskColors[level];
+  const band = HEAT_LEVELS[level];
   const bandLabel = lang === 'th' ? band.labelTh : band.labelEn;
 
   const textColor = isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)';
@@ -38,21 +44,24 @@ export function RiskGauge({ level, valueText, footnote }: Props) {
   // Marker sits at the centre of the current band's segment (segments are equal
   // width, so centre-of-band is the honest position).
   const markerPct = ((level + 0.5) / HEAT_LEVELS.length) * 100;
+  const labelFor = (d: (typeof HEAT_LEVELS)[number]) =>
+    scaleLabels?.[d.level] ?? (lang === 'th' ? d.labelTh : d.labelEn);
 
   return (
     <View style={styles.container}>
-      {/* Value + band chip */}
-      <View style={styles.head}>
-        <ScaledText style={[styles.value, { color: textColor }]} numberOfLines={1}>
-          {valueText}
-        </ScaledText>
-        <View style={[styles.bandChip, { backgroundColor: bandColor + '26' }]}>
-          <View style={[styles.bandDot, { backgroundColor: bandColor }]} />
-          <ScaledText style={[styles.bandLabel, { color: bandColor }]} numberOfLines={1}>
-            {bandLabel}
+      {showHeader ? (
+        <View style={styles.head}>
+          <ScaledText style={[styles.value, { color: textColor }]} numberOfLines={1}>
+            {valueText}
           </ScaledText>
+          <View style={[styles.bandChip, { backgroundColor: bandColor + '26' }]}>
+            <View style={[styles.bandDot, { backgroundColor: bandColor }]} />
+            <ScaledText style={[styles.bandLabel, { color: bandColor }]} numberOfLines={1}>
+              {bandLabel}
+            </ScaledText>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {/* Marker track */}
       <View style={styles.markerTrack}>
@@ -68,6 +77,7 @@ export function RiskGauge({ level, valueText, footnote }: Props) {
             key={d.level}
             style={[
               styles.cell,
+              !showScaleLabels && styles.cellCompact,
               { backgroundColor: d.color },
               i === 0 && styles.cellFirst,
               i === HEAT_LEVELS.length - 1 && styles.cellLast,
@@ -76,12 +86,14 @@ export function RiskGauge({ level, valueText, footnote }: Props) {
             <ScaledText style={[styles.cellNum, { color: d.level >= 2 ? '#fff' : 'rgba(0,0,0,0.7)' }]}>
               {d.level}
             </ScaledText>
-            <ScaledText
-              style={[styles.cellLabel, { color: d.level >= 2 ? '#fff' : 'rgba(0,0,0,0.7)' }]}
-              numberOfLines={1}
-            >
-              {lang === 'th' ? d.labelTh : d.labelEn}
-            </ScaledText>
+            {showScaleLabels ? (
+              <ScaledText
+                style={[styles.cellLabel, { color: d.level >= 2 ? '#fff' : 'rgba(0,0,0,0.7)' }]}
+                numberOfLines={1}
+              >
+                {labelFor(d)}
+              </ScaledText>
+            ) : null}
           </View>
         ))}
       </View>
@@ -108,7 +120,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontFamily: FontFamily.display,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   bandChip: {
     flexDirection: 'row',
@@ -153,6 +165,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     gap: 1,
   },
+  cellCompact: {
+    paddingVertical: 7,
+  },
   cellFirst: {
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
@@ -173,7 +188,7 @@ const styles = StyleSheet.create({
     lineHeight: 10,
   },
   footnote: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontFamily: FontFamily.body,
     lineHeight: 12,
     marginTop: 1,

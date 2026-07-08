@@ -105,10 +105,12 @@ and rejects any unsupported `schema_version` at load (`assertContract`).
 
 - **Dev:** same-origin `public/forecast_provinces.json`, synced by the DeepSeek bridge
   (`python scripts/publish_bridge.py` in `../DeepSeek_Heatwave`).
-- **Prod:** set `EXPO_PUBLIC_FORECAST_URL` to the published Pages URL
-  (`https://mcteekung.github.io/heatwave-contract/forecast_provinces.json`). It's wired in
-  `.env.production`; build with **`bunx expo export -p web --clear`** — the `--clear` is required
-  so Metro re-inlines the env var (a cached transform otherwise keeps the dev default).
+- **Prod:** set `EXPO_PUBLIC_FORECAST_URL` to a published contract URL.
+  This repo now defaults `.env.production` to
+  `https://raw.githubusercontent.com/MCTEEKUNG/heatwave-contract/main/forecast_provinces.json`
+  and the loader will also fall back from GitHub Pages URLs to the raw GitHub URL automatically.
+  Build with **`bunx expo export -p web --clear`** so Metro re-inlines the env var
+  (a cached transform otherwise keeps the dev default).
 
 The current model run is historical (`issue_date` 2023-12-31), so the Forecast Details screen
 shows a "historical model run" banner and dates in early 2024.
