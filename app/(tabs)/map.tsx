@@ -177,14 +177,17 @@ export default function MapScreen() {
       if (preview === '1') {
         // Review-only fixture: keeps the local preview readable when the
         // published contract has not reached the final forecast week yet.
-        const reviewRatios = [2.1, 2.4, 2.0];
+        const reviewRatios = [2.8, 2.8, 2.5];
+        const reviewLevels = [3, 3, 2] as const;
         setOutlook(o.map((point) => {
-          if (point.week < 2 || point.available) return point;
-          const ratio = reviewRatios[point.week - 2];
+          if (point.week < 2) return point;
+          const reviewIndex = point.week - 2;
+          const ratio = reviewRatios[reviewIndex];
+          const level = reviewLevels[reviewIndex];
           if (ratio === undefined) return point;
           return {
             ...point,
-            level: 2,
+            level,
             value: Math.round(ratio * 10) / 10,
             valueText: `${Math.round(ratio * 10)}%`,
             ratioVsNormal: ratio,

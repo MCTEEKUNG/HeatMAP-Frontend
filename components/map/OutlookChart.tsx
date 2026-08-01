@@ -47,6 +47,21 @@ const formatTrendValue = (point: OutlookPoint, th: boolean): string => {
   return th ? `เสี่ยง ${Math.round(value)}%` : `${Math.round(value)}% risk`;
 };
 
+const hexToRgb = (hex: string) => ({
+  r: parseInt(hex.slice(1, 3), 16),
+  g: parseInt(hex.slice(3, 5), 16),
+  b: parseInt(hex.slice(5, 7), 16),
+});
+
+const mixHex = (from: string, to: string, progress: number): string => {
+  const a = hexToRgb(from);
+  const b = hexToRgb(to);
+  const channel = (start: number, end: number) => Math.round(start + (end - start) * progress);
+  return `#${[channel(a.r, b.r), channel(a.g, b.g), channel(a.b, b.b)]
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('')}`;
+};
+
 export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
   const { isDarkMode, language } = useSettings();
   const lang = language as 'th' | 'en';
@@ -90,15 +105,29 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
       const dx = x2 - x1, dy = y2 - y1;
       const len = Math.sqrt(dx * dx + dy * dy);
       const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
-      segments.push({
-        left: (x1 + x2) / 2 - len / 2,
-        top: (y1 + y2) / 2 - 1.5,
-        len,
-        ang,
-        // Keep the line mapped to the same risk scale as the labels below.
-        // When a segment crosses bands, retain the higher-risk color.
-        color: colorForLevel(Math.max(a.level, b.level) as Parameters<typeof colorForLevel>[0]),
-      });
+      // Split a cross-band segment into short pieces so the line can visibly
+      // transition between the exact risk colors used by the scale below.
+      const startColor = colorForLevel(a.level);
+      const endColor = colorForLevel(b.level);
+      const pieces = a.level === b.level ? 1 : 16;
+      for (let piece = 0; piece < pieces; piece += 1) {
+        const from = piece / pieces;
+        const to = (piece + 1) / pieces;
+        const sx = x1 + dx * from;
+        const sy = y1 + dy * from;
+        const ex = x1 + dx * to;
+        const ey = y1 + dy * to;
+        const pieceDx = ex - sx;
+        const pieceDy = ey - sy;
+        const pieceLen = Math.sqrt(pieceDx * pieceDx + pieceDy * pieceDy);
+        segments.push({
+          left: (sx + ex) / 2 - pieceLen / 2,
+          top: (sy + ey) / 2 - 1.5,
+          len: pieceLen + 0.8,
+          ang,
+          color: mixHex(startColor, endColor, (from + to) / 2),
+        });
+      }
     }
   }
 
