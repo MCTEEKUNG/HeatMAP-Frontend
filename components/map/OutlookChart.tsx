@@ -78,7 +78,7 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
     if (value === null) return (Y_TOP + Y_BOTTOM) / 2;
     return Y_BOTTOM - ((value - minValue) / range) * (Y_BOTTOM - Y_TOP);
   };
-  const segments: { left: number; top: number; len: number; ang: number; rising: boolean }[] = [];
+  const segments: { left: number; top: number; len: number; ang: number; color: string }[] = [];
   if (w > 0) {
     for (let i = 0; i < weeks.length - 1; i++) {
       const a = weeks[i];
@@ -95,7 +95,9 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
         top: (y1 + y2) / 2 - 1.5,
         len,
         ang,
-        rising: bValue >= aValue,
+        // Keep the line mapped to the same risk scale as the labels below.
+        // When a segment crosses bands, retain the higher-risk color.
+        color: colorForLevel(Math.max(a.level, b.level) as Parameters<typeof colorForLevel>[0]),
       });
     }
   }
@@ -121,7 +123,7 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
                 width: seg.len,
                 left: seg.left,
                 top: seg.top,
-                backgroundColor: seg.rising ? '#F39C2C' : '#4ade80',
+                backgroundColor: seg.color,
                 transform: [{ rotate: `${seg.ang}deg` }],
               },
             ]}

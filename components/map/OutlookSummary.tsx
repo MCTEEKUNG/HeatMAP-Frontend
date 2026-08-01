@@ -72,7 +72,7 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
   }, null);
 
   const arrow = dir === 'up' ? '↗' : dir === 'down' ? '↘' : '→';
-  const arrowColor = dir === 'up' ? '#E5352B' : dir === 'down' ? '#4ade80' : muted;
+  const arrowColor = peak ? colorForLevel(peak.level) : muted;
   const dirText = dir === 'up'
     ? (th ? 'ความเสี่ยงมีแนวโน้มสูงขึ้น' : 'risk trending up')
     : dir === 'down'

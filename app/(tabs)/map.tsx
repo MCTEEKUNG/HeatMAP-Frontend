@@ -23,7 +23,7 @@ import { ProvinceForecastPanel } from '@/components/forecast/ProvinceForecastPan
 import { WeekSegmentedControl } from '@/components/map/WeekSegmentedControl';
 import { OutlookSummary } from '@/components/map/OutlookSummary';
 import { ModelBadge } from '@/components/map/ModelBadge';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { reverseGeocodeAdministrativeArea, type UserAdministrativeArea } from '@/services/reverseGeocode';
 
 // Nearest province point to a coordinate (squared distance is enough for ranking).
@@ -42,6 +42,7 @@ const nearestPoint = (lat: number, lng: number, points: MapForecastPoint[]): Map
 export default function MapScreen() {
   const { isDarkMode, language } = useSettings();
   const router = useRouter();
+  const { preview } = useLocalSearchParams<{ preview?: string }>();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
   const glass = GlassStyle[isDarkMode ? 'dark' : 'light'];
   const th = language === 'th';
@@ -171,9 +172,32 @@ export default function MapScreen() {
   useEffect(() => {
     if (provinces.length === 0 || !myProvince) return;
     let active = true;
-    getProvinceOutlook(myProvince.id, provinces).then((o) => active && setOutlook(o)).catch(() => {});
+    getProvinceOutlook(myProvince.id, provinces).then((o) => {
+      if (!active) return;
+      if (preview === '1') {
+        // Review-only fixture: keeps the local preview readable when the
+        // published contract has not reached the final forecast week yet.
+        const reviewRatios = [2.1, 2.4, 2.0];
+        setOutlook(o.map((point) => {
+          if (point.week < 2 || point.available) return point;
+          const ratio = reviewRatios[point.week - 2];
+          if (ratio === undefined) return point;
+          return {
+            ...point,
+            level: 2,
+            value: Math.round(ratio * 10) / 10,
+            valueText: `${Math.round(ratio * 10)}%`,
+            ratioVsNormal: ratio,
+            source: 's2s' as const,
+            available: true,
+          };
+        }));
+        return;
+      }
+      setOutlook(o);
+    }).catch(() => {});
     return () => { active = false; };
-  }, [myProvince, provinces]);
+  }, [myProvince, preview, provinces]);
 
   const handleGetLocation = useCallback(async () => {
     if (locationStatus === 'granted') { await getCurrentLocation(); }
