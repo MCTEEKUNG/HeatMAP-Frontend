@@ -1,0 +1,11 @@
+{
+  "name": "HeatMAP",
+  "short_name": "HeatMAP",
+  "start_url": "/map",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "icons": [
+    { "src": "/heatmap-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/heatmap-icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
