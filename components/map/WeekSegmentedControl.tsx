@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { FontFamily } from '@/constants/theme';
+import { Colors, FontFamily, GlassStyle } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { formatWeekRange } from '@/utils/bangkokTime';
@@ -22,50 +22,35 @@ const WEEKS = [1, 2, 3, 4] as const;
 
 export function WeekSegmentedControl({ selectedWeek, onSelect }: Props) {
   const { isDarkMode, language } = useSettings();
-  const lang = language as 'th' | 'en';
-
-  const bgColor     = isDarkMode ? 'rgba(16, 36, 58, 0.78)' : 'rgba(255,255,255,0.85)';
-  const activeColor = isDarkMode ? '#7FA3C8' : '#16324F';
-  const textActive  = '#FFFFFF';
-  const textIdle    = isDarkMode ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)';
-  const borderColor = isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+  const themeName = isDarkMode ? 'dark' : 'light';
+  const theme = Colors[themeName];
 
   return (
-    <View
-      style={[
-        styles.track,
-        {
-          backgroundColor: bgColor,
-          borderColor,
-          ...(typeof window !== 'undefined'
-            ? ({ backdropFilter: 'blur(14px) saturate(160%)' } as object)
-            : {}),
-        },
-      ]}
-    >
+    <View style={[GlassStyle[themeName], styles.track]}>
       {WEEKS.map((week) => {
         const isActive  = week === selectedWeek;
-        const dateRange = formatWeekRange(week, lang);
-        const weekLabel = lang === 'th' ? `สัปดาห์ ${week}` : `Week ${week}`;
+        const dateRange = formatWeekRange(week, language);
+        const weekLabel = language === 'th' ? `สัปดาห์ ${week}` : `Week ${week}`;
 
         return (
           <TouchableOpacity
             key={week}
-            style={[styles.pill, isActive && { backgroundColor: activeColor }]}
+            style={[styles.pill, isActive && { backgroundColor: theme.primary }]}
             onPress={() => onSelect(week)}
             activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel={`${weekLabel} ${dateRange}`}
             accessibilityState={{ selected: isActive }}
+            aria-pressed={isActive}
           >
             <ScaledText
-              style={[styles.weekLabel, { color: isActive ? textActive : textIdle }]}
+              style={[styles.weekLabel, { color: isActive ? theme.background : theme.text }]}
               numberOfLines={1}
             >
               {weekLabel}
             </ScaledText>
             <ScaledText
-              style={[styles.dateRange, { color: isActive ? 'rgba(255,255,255,0.75)' : textIdle }]}
+              style={[styles.dateRange, { color: isActive ? theme.background : theme.textSecondary }]}
               numberOfLines={1}
             >
               {dateRange}
@@ -80,8 +65,6 @@ export function WeekSegmentedControl({ selectedWeek, onSelect }: Props) {
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    borderRadius: 16,
-    borderWidth: 1,
     padding: 4,
     gap: 3,
   },

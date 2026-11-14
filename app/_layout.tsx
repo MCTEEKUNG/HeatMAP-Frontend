@@ -27,7 +27,7 @@ const CustomLightTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: Colors.light.primary,
-    background: Colors.light.background,
+    background: Platform.OS === 'web' ? 'transparent' : Colors.light.background,
     card: Colors.light.surface,
     text: Colors.light.text,
     border: Colors.light.border,
@@ -39,7 +39,7 @@ const CustomDarkTheme = {
   colors: {
     ...DarkTheme.colors,
     primary: Colors.dark.primary,
-    background: Colors.dark.background,
+    background: Platform.OS === 'web' ? 'transparent' : Colors.dark.background,
     card: Colors.dark.surface,
     text: Colors.dark.text,
     border: Colors.dark.border,
@@ -53,7 +53,12 @@ function AppContent({ children }: { children: React.ReactNode }) {
   const themedChildren = Platform.OS === 'web'
     ? (
       <View style={[styles.webRoot, { backgroundColor: Colors[colorScheme].background }]}>
-        <View style={[styles.webShell, { backgroundColor: Colors[colorScheme].background }]}>
+        <View style={[
+          styles.webShell,
+          { backgroundImage: isDarkMode
+            ? 'linear-gradient(155deg, #0e0e0e 8%, #292929 50%, #151515 88%)'
+            : 'linear-gradient(155deg, #fafafa 8%, #dddddd 50%, #f5f5f5 88%)' },
+        ]}>
           {children}
         </View>
       </View>

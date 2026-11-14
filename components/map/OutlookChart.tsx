@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { colorForLevel } from '@/constants/heatRisk';
-import { FontFamily } from '@/constants/theme';
+import { Colors, FontFamily } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { formatWeekRange } from '@/utils/bangkokTime';
@@ -68,9 +68,10 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
   const th = lang === 'th';
   const [w, setW] = useState(0);
 
-  const textColor = isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)';
-  const muted = isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
-  const ring = isDarkMode ? '#7FA3C8' : '#16324F';
+  const theme = Colors[isDarkMode ? 'dark' : 'light'];
+  const textColor = theme.text;
+  const muted = theme.textMuted;
+  const ring = theme.primary;
   const onLayout = (e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width);
   const availableValues = weeks
     .map((pt) => trendMetric(pt))
@@ -103,7 +104,6 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
       if (!a.available || !b.available || aValue === null || bValue === null) continue;
       const x1 = xFor(i), y1 = yFor(aValue), x2 = xFor(i + 1), y2 = yFor(bValue);
       const dx = x2 - x1, dy = y2 - y1;
-      const len = Math.sqrt(dx * dx + dy * dy);
       const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
       // Split a cross-band segment into short pieces so the line can visibly
       // transition between the exact risk colors used by the scale below.
@@ -182,8 +182,7 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
                 style={[
                   styles.pointValue,
                   {
-                    color: isPeak ? '#fff' : textColor,
-                    backgroundColor: isPeak ? color : 'transparent',
+                    color: textColor,
                     borderColor: isPeak ? color : 'transparent',
                   },
                 ]}
@@ -214,7 +213,7 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
                 styles.cell,
                 {
                   backgroundColor: isActive
-                    ? (isDarkMode ? 'rgba(127,163,200,0.18)' : 'rgba(22,50,79,0.08)')
+                    ? (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)')
                     : 'transparent',
                   borderColor: isActive ? ring : 'transparent',
                 },
@@ -226,7 +225,7 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
               accessibilityLabel={`${lang === 'th' ? 'สัปดาห์' : 'Week'} ${pt.week} ${formatWeekRange(pt.week, lang)}`}
             >
               <ScaledText
-                style={[styles.wlab, { color: isActive ? textColor : muted, fontWeight: isActive ? '800' : '600' }]}
+                style={[styles.wlab, { color: isActive ? textColor : muted, fontWeight: isActive ? '600' : '500' }]}
                 numberOfLines={1}
               >
                 {lang === 'th' ? `สัปดาห์ ${pt.week}` : `Week ${pt.week}`}
@@ -234,7 +233,7 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
               <ScaledText style={[styles.wdate, { color: muted }]} numberOfLines={1}>
                 {formatWeekRange(pt.week, lang)}
               </ScaledText>
-              <ScaledText style={[styles.wvalue, { color: pt.available ? colorForLevel(pt.level) : muted }]} numberOfLines={2}>
+              <ScaledText style={[styles.wvalue, { color: pt.available ? textColor : muted }]} numberOfLines={2}>
                 {humanText}
               </ScaledText>
             </TouchableOpacity>
@@ -247,9 +246,9 @@ export function OutlookChart({ weeks, selectedWeek, onSelect }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { width: '100%' },
-  chartHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 2 },
-  chartTitle: { fontSize: 12.5, lineHeight: 17, fontFamily: FontFamily.bodySemi, fontWeight: '800' },
-  chartHint: { flex: 1, textAlign: 'right', fontSize: 9.5, lineHeight: 13, fontFamily: FontFamily.bodyMedium },
+  chartHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 4 },
+  chartTitle: { fontSize: 13, lineHeight: 20, fontFamily: FontFamily.bodySemi, fontWeight: '600' },
+  chartHint: { flex: 1, textAlign: 'right', fontSize: 11, lineHeight: 16, fontFamily: FontFamily.bodyMedium },
   trendChart: { position: 'relative', width: '100%', paddingHorizontal: 36 },
   trendSegment: { position: 'absolute', height: 3, borderRadius: 2 },
   trendPointHit: { position: 'absolute', width: 72, alignItems: 'center' },
@@ -257,21 +256,21 @@ const styles = StyleSheet.create({
     minWidth: 52,
     overflow: 'hidden',
     borderWidth: 1,
-    borderRadius: 999,
+    borderRadius: 4,
     paddingHorizontal: 5,
     paddingVertical: 1,
     textAlign: 'center',
     fontSize: 11,
     lineHeight: 14,
     fontFamily: FontFamily.displaySemi,
-    fontWeight: '900',
+    fontWeight: '600', fontVariant: ['tabular-nums'],
   },
   pointRing: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginTop: 2, borderColor: 'transparent', borderWidth: 2.5 },
   pointDot: { width: DOT, height: DOT, borderRadius: DOT / 2, borderWidth: 2, borderColor: '#fff' },
-  pointWeek: { fontSize: 9, lineHeight: 12, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginTop: 7 },
-  labels: { flexDirection: 'row', marginTop: 6, gap: 6 },
-  cell: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 8, paddingHorizontal: 3, borderRadius: 10, borderWidth: 1 },
+  pointWeek: { fontSize: 11, lineHeight: 16, fontFamily: FontFamily.bodyMedium, marginTop: 4 },
+  labels: { flexDirection: 'row', marginTop: 4, gap: 4 },
+  cell: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 4, borderWidth: 1 },
   wlab: { fontSize: 13, fontFamily: FontFamily.bodySemi },
-  wdate: { fontSize: 9.5, fontFamily: FontFamily.body },
-  wvalue: { fontSize: 15, lineHeight: 19, fontFamily: FontFamily.displaySemi, fontWeight: '900', marginTop: 3, textAlign: 'center' },
+  wdate: { fontSize: 11, fontFamily: FontFamily.body },
+  wvalue: { fontSize: 15, lineHeight: 19, fontFamily: FontFamily.displaySemi, fontWeight: '600', fontVariant: ['tabular-nums'], marginTop: 4, textAlign: 'center' },
 });

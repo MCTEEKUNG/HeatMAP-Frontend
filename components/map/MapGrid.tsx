@@ -246,6 +246,7 @@ function WebLeafletMap({
       const b = focusBounds ?? THAILAND_BOUNDS;
       const bounds = MapView.L.latLngBounds([b.south, b.west], [b.north, b.east]);
       map.fitBounds(bounds, {
+        animate: false,
         paddingTopLeft: [16, fitPaddingTop],
         paddingBottomRight: [16, 24],
       });

@@ -1,76 +1,83 @@
+import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { BottomNavStyle, Colors, FontFamily } from '@/constants/theme';
+import { Colors, FontFamily, GlassStyle } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { useSettings } from '@/hooks/useSettings';
 
-export type TabKey = 'map' | 'safety' | 'profile';
+const TABS: Record<string, { icon: string; labelKey: string }> = {
+  map: { icon: 'map.fill', labelKey: 'navMap' },
+  safety: { icon: 'ac_unit', labelKey: 'navSafety' },
+  settings: { icon: 'settings', labelKey: 'navSettings' },
+};
 
-const TABS: { key: TabKey; icon: string; labelKey: string; route: string }[] = [
-  { key: 'map',     icon: 'map.fill',      labelKey: 'navMap',      route: '/(tabs)/map' },
-  { key: 'safety',  icon: 'ac_unit',        labelKey: 'navSafety',   route: '/(tabs)/safety' },
-  { key: 'profile', icon: 'settings',      labelKey: 'navSettings', route: '/(tabs)/settings' },
-];
+const GAP = 4;
 
-const SLOT_PCT = 100 / TABS.length;
-
-/**
- * Floating liquid-glass tab bar (Calm Authority): one shared pill nav used by
- * all four screens. The navy pill sits behind the active tab; the active
- * icon/label render white on navy, inactive stay soft navy. Web gets a real
- * backdrop blur (BottomNavStyle); native falls back to a near-opaque surface.
- *
- * NOTE — the pill is positioned with PERCENTAGES, deliberately not animated:
- * every screen renders its own GlassTabBar instance, so a mount-time spring
- * made the pill "fly in" from slot 0 on every navigation (and overshoot off
- * the bar entirely on wide/resized viewports). Static placement is correct
- * here; press feedback comes from the Pressable opacity instead.
- */
-export function GlassTabBar({ active }: { active: TabKey }) {
+export function GlassTabBar({ state, navigation }: BottomTabBarProps) {
   const { isDarkMode, t } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
-  const activeIndex = Math.max(0, TABS.findIndex((tab) => tab.key === active));
+  const surface = GlassStyle[isDarkMode ? 'dark' : 'light'];
+  const selected = isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+  const [trackWidth, setTrackWidth] = useState(0);
+  const tabWidth = Math.max(0, (trackWidth - GAP * (state.routes.length - 1)) / state.routes.length);
+  const activeIndex = useSharedValue(state.index);
 
-  const onPress = (tab: (typeof TABS)[number]) => {
-    if (tab.key === active) return;
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    }
-    router.push(tab.route as never);
-  };
+  useEffect(() => {
+    activeIndex.value = withTiming(state.index, {
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [activeIndex, state.index]);
+
+  const slidingStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: activeIndex.value * (tabWidth + GAP) }],
+  }));
 
   return (
-    <View style={[BottomNavStyle.container, isDarkMode ? BottomNavStyle.dark : null, styles.bar]}>
-      <View style={styles.inner}>
-        <View
-          pointerEvents="none"
-          style={[
-            styles.pill,
-            {
-              left: `${activeIndex * SLOT_PCT}%`,
-              width: `${SLOT_PCT}%`,
-              backgroundColor: theme.primary,
-            },
-          ]}
-        />
-        {TABS.map((tab) => {
-          const isActive = tab.key === active;
-          const color = isActive ? '#FFFFFF' : theme.tabIconDefault;
+    <View style={[surface, styles.bar]}>
+      <View
+        style={styles.inner}
+        accessibilityRole="tablist"
+        onLayout={({ nativeEvent }) => setTrackWidth(nativeEvent.layout.width)}
+      >
+        {tabWidth > 0 && (
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.pill, { width: tabWidth, backgroundColor: selected }, slidingStyle]}
+          />
+        )}
+        {state.routes.map((route, index) => {
+          const tab = TABS[route.name];
+          const isActive = index === state.index;
+          const color = isActive ? theme.primary : theme.textSecondary;
+          const label = t(tab.labelKey);
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (isActive || event.defaultPrevented) return;
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            }
+            navigation.navigate(route.name, route.params);
+          };
           return (
             <Pressable
-              key={tab.key}
-              style={({ pressed }) => [styles.item, pressed && !isActive && styles.itemPressed]}
-              onPress={() => onPress(tab)}
+              key={route.key}
+              style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+              onPress={onPress}
+              onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
               accessibilityRole="tab"
+              aria-selected={isActive}
               accessibilityState={{ selected: isActive }}
-              accessibilityLabel={t(tab.labelKey)}
+              accessibilityLabel={label}
             >
-              <IconSymbol size={22} name={tab.icon as never} color={color} />
+              <IconSymbol size={18} name={tab.icon} color={color} />
               <ScaledText variant="labelSmall" style={[styles.label, { color }]}>
-                {t(tab.labelKey)}
+                {label}
               </ScaledText>
             </Pressable>
           );
@@ -82,40 +89,42 @@ export function GlassTabBar({ active }: { active: TabKey }) {
 
 const styles = StyleSheet.create({
   bar: {
-    paddingHorizontal: 6,
-    paddingVertical: 6,
+    position: 'absolute',
+    bottom: 12,
+    left: 16,
+    right: 16,
+    padding: 4,
+    borderRadius: 12,
+    borderWidth: 1,
     zIndex: 40,
   },
   inner: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'stretch',
-    position: 'relative',
+    gap: GAP,
   },
   pill: {
     position: 'absolute',
+    left: 0,
     top: 0,
     bottom: 0,
-    borderRadius: 999,
-    shadowColor: '#16324F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.38,
-    shadowRadius: 14,
-    elevation: 6,
+    borderRadius: 24,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   item: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
-    minHeight: 44,
-  },
-  itemPressed: {
-    opacity: 0.55,
+    gap: 4,
+    minHeight: 48,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   label: {
-    fontSize: 10,
+    fontSize: 12,
+    lineHeight: 16,
     fontFamily: FontFamily.bodySemi,
-    fontWeight: '600',
   },
 });

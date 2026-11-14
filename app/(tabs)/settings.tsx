@@ -1,8 +1,7 @@
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { CustomSwitch } from '@/components/ui/CustomSwitch';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontFamily, SoftShadow } from '@/constants/theme';
-import { GlassTabBar } from '@/components/ui/GlassTabBar';
+import { Colors, FontFamily, GlassStyle } from '@/constants/theme';
 import { useSettings, Language, FontSize } from '@/hooks/useSettings';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScaledText } from '@/components/ui/ScaledText';
@@ -26,7 +25,7 @@ export default function SettingsScreen() {
   } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
 
-  const card = [styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, SoftShadow.light];
+  const card = [GlassStyle[isDarkMode ? 'dark' : 'light'], styles.card];
 
   // ── Sub-components ──────────────────────────────────────────────────────────
 
@@ -71,7 +70,7 @@ export default function SettingsScreen() {
           accessibilityState={{ selected: value === opt.v }}
           accessibilityLabel={opt.label}
         >
-          <ScaledText fontSize={13} style={[styles.segmentText, { color: value === opt.v ? '#FFFFFF' : theme.textMuted }]}>
+          <ScaledText fontSize={13} style={[styles.segmentText, { color: value === opt.v ? theme.background : theme.textMuted }]}>
             {opt.label}
           </ScaledText>
         </TouchableOpacity>
@@ -80,7 +79,7 @@ export default function SettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -183,7 +182,6 @@ export default function SettingsScreen() {
         </ScaledText>
       </ScrollView>
 
-      <GlassTabBar active="profile" />
     </SafeAreaView>
   );
 }

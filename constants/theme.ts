@@ -1,19 +1,10 @@
-/**
- * Heatwave Forecast App Theme — "Calm Authority"
- * (spec: docs/superpowers/specs/2026-06-10-calm-authority-redesign-design.md)
- * Navy #16324F · Surface #F7F9FB · Hairline #E3E9EF
- * IRON RULE: warm colours (amber/vermilion/red + accent #E8702A) appear ONLY
- * where they encode heat RISK — never as decoration. Everything else is
- * navy + off-white, so a warm pixel always carries meaning.
- */
-
 import { Platform, Dimensions, useWindowDimensions, Text, TextStyle } from 'react-native';
 
-// Calm Authority design tokens
+// Neutral surfaces with semantic heat-risk colors
 export const DesignTokens = {
   // Core palette
-  primaryColor: '#16324F',      // Navy - trust/authority (NOT a risk colour)
-  secondaryColor: '#3D5A77',    // Soft navy - secondary text/icons
+  primaryColor: '#1c1c1c',
+  secondaryColor: '#464646',
   accentColor: '#E8702A',       // Warm accent - RISK-ONLY, never decorative
 
   // Severity colors (calm risk ramp - muted, not neon)
@@ -30,25 +21,25 @@ export const DesignTokens = {
   
   // Background gradient colors
   backgroundGradient: {
-    light: ['#F7F9FB', '#EFF3F7'],  // Off-white, barely-there cool tint
-    dark: ['#10243A', '#0B1A2B'],    // Desaturated deep navy (not black)
+    light: ['#f8f8f8', '#e6e6e6'],
+    dark: ['#242424', '#0e0e0e'],
   },
 
   // Surface colors
   surfaceColor: '#FFFFFF',
   glassColor: 'rgba(255, 255, 255, 0.58)',
   glassBorder: 'rgba(255, 255, 255, 0.72)',
-  glassDark: 'rgba(16, 36, 58, 0.78)',
+  glassDark: 'rgba(30, 30, 30, 0.78)',
   glassBorderDark: 'rgba(255, 255, 255, 0.16)',
 
   // Text colors
-  textPrimary: '#10243A',        // Deep navy text
-  textSecondary: '#41566B',      // Slate
-  textPrimaryDark: '#EDF2F7',
-  textSecondaryDark: '#9FB3C8',
+  textPrimary: '#171717',
+  textSecondary: '#484848',
+  textPrimaryDark: '#f5f5f5',
+  textSecondaryDark: '#bdbdbd',
 
   // Border colors
-  borderColor: '#E3E9EF',        // Hairline
+  borderColor: '#d8d8d8',        // Hairline
   borderColorDark: 'rgba(255, 255, 255, 0.14)',
 
   // Error/Alert colors (semantic, calm)
@@ -60,7 +51,7 @@ export const DesignTokens = {
   glass: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: '#10243A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
     shadowRadius: 24,
@@ -145,20 +136,20 @@ export const FontFamily = {
 } as const;
 
 const tintColorLight = DesignTokens.primaryColor;
-const tintColorDark = '#7FA3C8'; // Desaturated steel blue for dark mode (calm)
+const tintColorDark = '#eeeeee';
 
 export const Colors = {
   light: {
     // Primary theme
     text: DesignTokens.textPrimary,
     textSecondary: DesignTokens.textSecondary,
-    textMuted: '#6B7C8D',
-    background: '#F7F9FB',
+    textMuted: '#595959',
+    background: '#efefef',
     surface: DesignTokens.surfaceColor,
     glass: DesignTokens.glass.backgroundColor,
     tint: tintColorLight,
-    icon: '#3D5A77',
-    tabIconDefault: '#7E93A6',
+    icon: '#484848',
+    tabIconDefault: '#595959',
     tabIconSelected: tintColorLight,
     primary: DesignTokens.primaryColor,
     secondary: DesignTokens.secondaryColor,
@@ -187,13 +178,13 @@ export const Colors = {
     // Primary theme - high contrast
     text: DesignTokens.textPrimaryDark,
     textSecondary: DesignTokens.textSecondaryDark,
-    textMuted: '#7C90A4',
-    background: '#0E1F33',
-    surface: 'rgba(22, 50, 79, 0.95)',
+    textMuted: '#b3b3b3',
+    background: '#121212',
+    surface: '#222222',
     glass: DesignTokens.glassDark,
     tint: tintColorDark,
-    icon: '#B8C8D9',
-    tabIconDefault: '#7C90A4',
+    icon: '#d5d5d5',
+    tabIconDefault: '#b3b3b3',
     tabIconSelected: tintColorDark,
     primary: tintColorDark,
     secondary: DesignTokens.secondaryColor,
@@ -216,7 +207,7 @@ export const Colors = {
     
     // Additional
     backdrop: 'rgba(0, 0, 0, 0.55)',
-    overlay: 'rgba(11, 26, 43, 0.95)',
+    overlay: 'rgba(17, 17, 17, 0.95)',
   },
 };
 
@@ -376,34 +367,22 @@ export function createTypography(scale: number = 1) {
 }
 
 // Glassmorphism style helper
+const glassBlur = Platform.OS === 'web' ? { backdropFilter: 'blur(18px)' } : {};
+
 export const GlassStyle = {
   light: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    ...glassBlur,
+    backgroundColor: Platform.OS === 'web' ? 'rgba(255, 255, 255, 0.64)' : '#ffffff',
+    borderColor: 'rgba(0, 0, 0, 0.12)',
     borderWidth: 1,
     borderRadius: 16,
-    shadowColor: '#10243A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    elevation: 12,
-    ...(Platform.OS === 'web'
-      ? ({ backdropFilter: 'blur(14px) saturate(160%)' } as any)
-      : null),
   },
   dark: {
-    backgroundColor: 'rgba(16, 36, 58, 0.82)',
+    ...glassBlur,
+    backgroundColor: Platform.OS === 'web' ? 'rgba(32, 32, 32, 0.66)' : '#222222',
     borderColor: 'rgba(255, 255, 255, 0.16)',
     borderWidth: 1,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 12,
-    ...(Platform.OS === 'web'
-      ? ({ backdropFilter: 'blur(14px) saturate(160%)' } as any)
-      : null),
   },
   // Opaque panel variant — for persistent legend & summary bar placed at screen edges
   // (NOT over the coloured choropleth; higher opacity so it doesn't mute map colours)
@@ -413,7 +392,7 @@ export const GlassStyle = {
       borderColor: 'rgba(255, 255, 255, 0.9)',
       borderWidth: 1,
       borderRadius: 20,
-      shadowColor: '#10243A',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.18,
       shadowRadius: 20,
@@ -423,7 +402,7 @@ export const GlassStyle = {
         : null),
     },
     dark: {
-      backgroundColor: 'rgba(12, 28, 46, 0.92)',
+      backgroundColor: 'rgba(20, 20, 20, 0.92)',
       borderColor: 'rgba(255, 255, 255, 0.14)',
       borderWidth: 1,
       borderRadius: 20,
@@ -442,7 +421,7 @@ export const GlassStyle = {
 // Soft shadow style
 export const SoftShadow = {
   light: {
-    shadowColor: '#10243A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -471,7 +450,7 @@ export const BottomNavStyle = {
     backdropFilter: 'blur(18px) saturate(170%)' as any,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.72)',
-    shadowColor: '#10243A',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.22,
     shadowRadius: 32,
@@ -489,12 +468,12 @@ export const HeaderStyle = {
   container: {
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: 'rgba(247, 249, 251, 0.88)',
+    backgroundColor: 'rgba(239, 239, 239, 0.88)',
     backdropFilter: 'blur(12px)' as any,
     borderBottomWidth: 0,
   },
   dark: {
-    backgroundColor: 'rgba(14, 31, 51, 0.88)',
+    backgroundColor: 'rgba(18, 18, 18, 0.88)',
   },
 };
 
@@ -509,7 +488,7 @@ export const CardStyle = {
     ...SoftShadow.light,
   },
   dark: {
-    backgroundColor: 'rgba(22, 50, 79, 0.95)',
+    backgroundColor: '#222222',
     borderRadius: DesignTokens.borderRadius.md,
     padding: DesignTokens.spacing.md,
     borderWidth: 1,

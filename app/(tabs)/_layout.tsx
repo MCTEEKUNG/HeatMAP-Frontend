@@ -1,56 +1,32 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { type PropsWithChildren } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import { Platform, View } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { GlassTabBar } from '@/components/ui/GlassTabBar';
+
+function TabScene({ children }: PropsWithChildren) {
+  const focused = useIsFocused();
+
+  // Web fallback screens can stay mounted and painted behind a transparent tab.
+  return (
+    <View style={{ flex: 1, display: focused ? 'flex' : 'none' }}>
+      {children}
+    </View>
+  );
+}
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme ?? 'light'];
-
   return (
     <Tabs
       initialRouteName="map"
-      screenOptions={{
-        tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: theme.tabIconDefault,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarStyle: {
-          display: 'none',
-        },
-      }}>
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="map.fill" color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="safety"
-        options={{
-          title: 'Guide',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="ac_unit" color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
-          ),
-        }}
-      />
+      screenLayout={Platform.OS === 'web' ? ({ children }) => <TabScene>{children}</TabScene> : undefined}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <GlassTabBar {...props} />}
+    >
+      <Tabs.Screen name="map" options={{ title: 'Map' }} />
+      <Tabs.Screen name="safety" options={{ title: 'Guide' }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
     </Tabs>
   );
 }

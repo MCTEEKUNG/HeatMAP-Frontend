@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity, Pressable, Linking, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter, useSegments } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Colors, FontFamily, RiskColors, GlassStyle } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { GlassTabBar } from '@/components/ui/GlassTabBar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -231,10 +230,8 @@ const WARNINGS = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function SafetyScreen() {
+export function SafetyScreen({ isTabMode = false }: { isTabMode?: boolean }) {
   const { risk: riskParam } = useLocalSearchParams<{ risk?: string }>();
-  const segments = useSegments();
-  const isTabMode = segments[0] === '(tabs)';
   const router = useRouter();
   const { isDarkMode, language, t } = useSettings();
   const theme = Colors[isDarkMode ? 'dark' : 'light'];
@@ -443,7 +440,7 @@ out center 40;`;
   }, []);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]} edges={['top']}>
 
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -783,12 +780,15 @@ out center 40;`;
             : 'This is a risk forecast, not a confirmed heatwave event.'}
         </ScaledText>
       </ScrollView>
-      {isTabMode && <GlassTabBar active="safety" />}
     </SafeAreaView>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+
+export default function StandaloneSafetyScreen() {
+  return <SafetyScreen />;
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

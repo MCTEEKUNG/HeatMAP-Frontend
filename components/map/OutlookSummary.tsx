@@ -12,13 +12,12 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { colorForLevel, descriptorForLevel, HEAT_LEVELS, type HeatLevel } from '@/constants/heatRisk';
-import { FontFamily } from '@/constants/theme';
+import { Colors, FontFamily } from '@/constants/theme';
 import { useSettings } from '@/hooks/useSettings';
 import { ScaledText } from '@/components/ui/ScaledText';
 import { OutlookChart } from './OutlookChart';
 import { RiskGauge } from './RiskGauge';
-import type { OutlookPoint } from '@/services/forecastService';
-import type { RiskLevel } from '@/services/forecastService';
+import type { OutlookPoint, RiskLevel } from '@/services/forecastService';
 import { guidanceFor } from '@/constants/riskGuidance';
 import { humanRiskText, modelEvidenceText } from './outlookCopy';
 
@@ -40,9 +39,10 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
   const { isDarkMode, language } = useSettings();
   const th = language === 'th';
 
-  const textColor = isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)';
-  const muted = isDarkMode ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
-  const accent = isDarkMode ? '#7FA3C8' : '#16324F';
+  const theme = Colors[isDarkMode ? 'dark' : 'light'];
+  const textColor = theme.text;
+  const muted = theme.textMuted;
+  const divider = theme.border;
 
   // Weeks 2-4 (the model forecast). Keep unavailable ones so the chart shows them muted.
   const forecastAll = weeks.filter((w) => w.week !== 1);
@@ -94,8 +94,11 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
   if (forecast.length === 0) {
     return (
       <View>
+        <ScaledText style={[styles.emptyTitle, { color: textColor }]}>
+          {th ? 'ไทม์ไลน์ความเสี่ยง' : 'Risk timeline'}
+        </ScaledText>
         <ScaledText style={[styles.emptyText, { color: muted }]}>
-          {th ? 'ยังไม่มีพยากรณ์ล่วงหน้าในขณะนี้' : 'No forward outlook available yet'}
+          {th ? 'ยังไม่มีพยากรณ์ล่วงหน้าสำหรับพื้นที่นี้' : 'No upcoming forecast for this area'}
         </ScaledText>
       </View>
     );
@@ -119,8 +122,7 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
         style={[
           styles.chartWrap,
           {
-            borderColor: accent + '33',
-            backgroundColor: isDarkMode ? 'rgba(127,163,200,0.08)' : 'rgba(22,50,79,0.045)',
+            borderColor: divider,
           },
         ]}
       >
@@ -132,8 +134,7 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
           style={[
             styles.plan,
             {
-              borderColor: selectedColor + '66',
-              backgroundColor: isDarkMode ? selectedColor + '22' : selectedBand.bg,
+              borderColor: divider,
             },
           ]}
         >
@@ -176,15 +177,16 @@ export function OutlookSummary({ weeks, selectedWeek, onSelect }: Props) {
 const styles = StyleSheet.create({
   sectionKicker: { fontSize: 11, fontFamily: FontFamily.bodySemi, fontWeight: '700', marginBottom: 3 },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headline: { fontSize: 28, lineHeight: 34, fontFamily: FontFamily.display, fontWeight: '900' },
-  arrow: { fontSize: 28, lineHeight: 34, fontWeight: '800' },
+  headline: { fontSize: 24, lineHeight: 32, fontFamily: FontFamily.displaySemi },
+  arrow: { fontSize: 24, lineHeight: 32, fontWeight: '500' },
   dir: { fontSize: 12, fontFamily: FontFamily.bodyMedium, marginTop: 1 },
-  chartWrap: { marginTop: 12, borderRadius: 14, borderWidth: 1, paddingTop: 10, paddingHorizontal: 10, paddingBottom: 8 },
-  emptyText: { fontSize: 12, fontFamily: FontFamily.body, paddingVertical: 14, textAlign: 'center' },
-  plan: { marginTop: 12, borderRadius: 14, borderWidth: 1, padding: 11 },
+  chartWrap: { marginTop: 12, borderRadius: 8, borderWidth: 1, padding: 8 },
+  emptyTitle: { fontSize: 14, lineHeight: 20, fontFamily: FontFamily.bodySemi },
+  emptyText: { fontSize: 13, lineHeight: 20, fontFamily: FontFamily.body, marginTop: 4 },
+  plan: { marginTop: 12, borderRadius: 8, borderWidth: 1, padding: 12 },
   planHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   planKicker: { fontSize: 10.5, fontFamily: FontFamily.bodyMedium },
-  planTitle: { fontSize: 18, fontFamily: FontFamily.display, fontWeight: '800' },
+  planTitle: { fontSize: 18, fontFamily: FontFamily.displaySemi },
   actions: { gap: 7, marginTop: 8 },
   actionRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   actionDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7, flexShrink: 0 },
