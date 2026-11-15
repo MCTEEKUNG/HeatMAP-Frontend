@@ -20,11 +20,11 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { type RiskLevel } from '@/constants/theme';
 import { colorForLevel, levelFromSeverity, levelFromRiskLevel } from '@/constants/heatRisk';
 
-// Calm Authority: desaturated CARTO basemaps (free; OSM data) so the only
-// saturated colour on screen is the risk layer itself.
+// Keep the background muted so the forecast colors remain distinct.
+const cartoKey = process.env.EXPO_PUBLIC_CARTO_BASEMAPS_KEY?.trim();
 const TILE_LAYERS = {
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  light: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  dark: 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
 };
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -266,7 +266,8 @@ function WebLeafletMap({
   const { MapContainer, TileLayer, Polygon, Marker, GeoJSON } = MapView;
 
   // Get the appropriate tile layer URL based on theme
-  const tileLayerUrl = isDarkMode ? TILE_LAYERS.dark : TILE_LAYERS.light;
+  const tileLayer = isDarkMode ? TILE_LAYERS.dark : TILE_LAYERS.light;
+  const tileLayerUrl = cartoKey ? `${tileLayer}?key=${encodeURIComponent(cartoKey)}` : null;
 
   // Choropleth mode: real province polygons shaded by forecast tier. Active
   // whenever the boundaries + per-province risk are both available.
@@ -334,7 +335,7 @@ function WebLeafletMap({
       style={{ flex: 1, width: '100%', height: '100%' }}
       zoomControl={false}
     >
-      <TileLayer attribution={TILE_ATTRIBUTION} url={tileLayerUrl} />
+      {tileLayerUrl && <TileLayer attribution={TILE_ATTRIBUTION} url={tileLayerUrl} />}
 
       <MapController userLoc={userLocation} />
 

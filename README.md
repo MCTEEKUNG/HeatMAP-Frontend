@@ -56,6 +56,15 @@ bun run test:unit
 
 ---
 
+## CARTO basemap
+
+Request a browser key at [CARTO Basemaps](https://carto.com/basemaps/apikey/). The weekly risk map uses the same key for the light and dark basemaps.
+
+- **Local development:** Set `EXPO_PUBLIC_CARTO_BASEMAPS_KEY` in `.env.local`, then reload the app.
+- **Vercel:** Add `EXPO_PUBLIC_CARTO_BASEMAPS_KEY` under **Project Settings → Environment Variables** for each environment you use. Deploy a build that includes this code after adding the variable.
+
+Expo includes this key in the browser bundle. Use CARTO's website (Referer) restriction for the domain that serves the app. CARTO requires a separate key for restricted localhost use. Without a key, the app shows the forecast overlay without CARTO tiles.
+
 ## Deployment
 
 After `bunx expo export -p web`, deploy the `dist/` folder as a static site:
